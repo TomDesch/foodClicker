@@ -1,0 +1,20 @@
+name: FoodClicker
+version: 2.15
+main: io.github.stealingdapenta.foodclicker.FoodClicker
+author: StealingDaPenta
+description: IDLE inventory game.
+api-version: 1.15
+
+commands:
+  foodclicker:
+    description: Open the FoodClicker game.
+    usage: /<command>
+  fcstats:
+    description: Display your FoodClicker statistics in chat for everyone to see!
+    usage: /<command>
+  fctop:
+    description: Display the 10 richest players on the server!
+    usage: /<command>
+  fcfirework:
+    description: Admin command to summon fireworks.
+    usage: /<command> <player> <size>
