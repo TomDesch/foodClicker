@@ -1,19 +1,5 @@
 package io.github.stealingdapenta.foodclicker.basics;
 
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerData;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
-import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import io.github.stealingdapenta.foodclicker.utils.Listeners;
-import org.bukkit.Bukkit;
-import org.bukkit.Material;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -46,13 +32,36 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTW
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHEVENCHANCE;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHMOMS;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STONKS;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.ACHIEVEMENTS_GUI_TITLE_ADDENDUM;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.GAME_GUI_TITLE_ADDENDUM;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.PREFERENCES_GUI_TITLE_ADDENDUM;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.PRESTIGE_SHOP;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.SHOP_GUI_TITLE_ADDENDUM;
+import static io.github.stealingdapenta.foodclicker.utils.Listeners.UPGRADES_GUI_TITLE_ADDENDUM;
+
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerData;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
+import java.util.ArrayList;
+import lombok.Getter;
+import org.bukkit.Bukkit;
+import org.bukkit.Material;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 
 public class GUI {
+
     private final InventoryManager im = InventoryManager.getInstance();
+    @Getter
     private final ClickingPlayer cp;
+    @Getter
     private int gameState;
     private String GUItitle;
     private Inventory inventory;
+    @Getter
     private int achievementsPageNumber;
 
     public GUI(ClickingPlayer cp) {
@@ -62,20 +71,8 @@ public class GUI {
         this.achievementsPageNumber = 1;
     }
 
-    public int getAchievementsPageNumber() {
-        return achievementsPageNumber;
-    }
-
     public void setAchievementsPageNumber(int achievementsPageNumber) {
         this.achievementsPageNumber = achievementsPageNumber;
-    }
-
-    public ClickingPlayer getCp() {
-        return cp;
-    }
-
-    public int getGameState() {
-        return gameState;
     }
 
     public void setGameState(int gameState) {
@@ -118,24 +115,31 @@ public class GUI {
     }
 
     private void setGUItitle(String addendum) {
-        this.GUItitle = getCp().getPlayer().getDisplayName() + addendum;
+        this.GUItitle = getCp().getPlayer()
+                               .getDisplayName() + addendum;
     }
 
     private Inventory createGameGUI() {
-        Material pane1 = cp.getSettings().getPrimaryPaneColor();
-        Material pane2 = cp.getSettings().getSecondaryPaneColor();
-        Material border = cp.getSettings().getBorderPaneColor();
-        String lore1 = cp.getSettings().getPrimaryLoreColor(); // blue
+        Material pane1 = cp.getSettings()
+                           .getPrimaryPaneColor();
+        Material pane2 = cp.getSettings()
+                           .getSecondaryPaneColor();
+        Material border = cp.getSettings()
+                            .getBorderPaneColor();
+        String lore1 = cp.getSettings()
+                         .getPrimaryLoreColor(); // blue
 
-        setGUItitle(Listeners.getGameGuiTitleAddendum());
+        setGUItitle(GAME_GUI_TITLE_ADDENDUM);
         Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
 
         im.setInventoryBorder(GUI, border);
 
         //clickable
         GUI.setItem(20, new ItemBuilder(Material.APPLE)
-                .setDisplayName("&6Cookie").addLore(lore1 + "Click on me!")
-                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES).create());
+                .setDisplayName("&6Cookie")
+                .addLore(lore1 + "Click on me!")
+                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                .create());
 
         //Profile button
         GUI.setItem(16, im.getPlayerSkullItem(cp.getPlayer()));
@@ -146,25 +150,31 @@ public class GUI {
                 .addLore("&e► Click to see your settings.")
                 .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
                 .addItemFlags(ItemFlag.HIDE_ENCHANTS)
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS)
-                .addItemFlags(ItemFlag.HIDE_DESTROYS).create());
-
+                .addItemFlags(ItemFlag.HIDE_DESTROYS)
+                .create());
 
         //shop button
-        GUI.setItem(34, new ItemBuilder(Material.ENDER_CHEST).setDisplayName("&3Shop").addLore("&e► Click to open the shop.").create());
+        GUI.setItem(34, new ItemBuilder(Material.ENDER_CHEST).setDisplayName("&3Shop")
+                                                             .addLore("&e► Click to open the shop.")
+                                                             .create());
 
         //Achievements button
-        GUI.setItem(43, new ItemBuilder(Material.TOTEM_OF_UNDYING).setDisplayName("&3Achievements").addLore("&e► Click to see your achievements.").create());
+        GUI.setItem(43, new ItemBuilder(Material.TOTEM_OF_UNDYING).setDisplayName("&3Achievements")
+                                                                  .addLore("&e► Click to see your achievements.")
+                                                                  .create());
         im.setInventoryPattern(GUI, true, pane1, pane2);
         return GUI;
     }
 
     public Inventory createShopGUI() {
-        Material pane1 = cp.getSettings().getPrimaryPaneColor();
-        Material pane2 = cp.getSettings().getSecondaryPaneColor();
-        Material border = cp.getSettings().getBorderPaneColor();
+        Material pane1 = cp.getSettings()
+                           .getPrimaryPaneColor();
+        Material pane2 = cp.getSettings()
+                           .getSecondaryPaneColor();
+        Material border = cp.getSettings()
+                            .getBorderPaneColor();
 
-        setGUItitle(Listeners.getShopGuiTitleAddendum());
+        setGUItitle(SHOP_GUI_TITLE_ADDENDUM);
         Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
 
         im.setInventoryBorder(GUI, border);
@@ -205,29 +215,35 @@ public class GUI {
                                                            .addLore("&e► Click to open your upgrades shop.")
                                                            .create());
 
-
         //shop button buy mode
         GUI.setItem(34, new ItemBuilder(Material.ENDER_EYE).setDisplayName("&6Buy mode")
                                                            .addLore("&e► Click to change buy mode.")
                                                            .addLore(cp.isBuymodeAll() ? "&a○ Currently active: buy max" : "&a○ Currently active: buy x1")
-                                                           .setGlowing(true).create());
+                                                           .setGlowing(true)
+                                                           .create());
 
         //Return button
-        GUI.setItem(43, new ItemBuilder(Material.SPECTRAL_ARROW).setDisplayName("&3Back").addLore("&e► Click to go back.").create());
-
+        GUI.setItem(43, new ItemBuilder(Material.SPECTRAL_ARROW).setDisplayName("&3Back")
+                                                                .addLore("&e► Click to go back.")
+                                                                .create());
 
         im.setInventoryPattern(GUI, false, pane1, pane2);
         return GUI;
     }
 
     private Inventory createAchievementsGUI(int page) {
-        Material pane1 = getCp().getSettings().getPrimaryPaneColor();
-        Material pane2 = getCp().getSettings().getSecondaryPaneColor();
-        Material border = getCp().getSettings().getBorderPaneColor();
+        Material pane1 = getCp().getSettings()
+                                .getPrimaryPaneColor();
+        Material pane2 = getCp().getSettings()
+                                .getSecondaryPaneColor();
+        Material border = getCp().getSettings()
+                                 .getBorderPaneColor();
 
-        ItemStack notAchieved = new ItemBuilder(pane2).setDisplayName("&cNot Achieved.").addLore("&eYou have not unlocked this achievement.").create();
+        ItemStack notAchieved = new ItemBuilder(pane2).setDisplayName("&cNot Achieved.")
+                                                      .addLore("&eYou have not unlocked this achievement.")
+                                                      .create();
 
-        setGUItitle(Listeners.getAchievementsGuiTitleAddendum());
+        setGUItitle(ACHIEVEMENTS_GUI_TITLE_ADDENDUM);
         Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
 
         im.setInventoryBorder(GUI, border);
@@ -236,12 +252,18 @@ public class GUI {
         GUI.setItem(16, im.getPlayerSkullItem(getCp().getPlayer()));
 
         //Back to Main Menu button
-        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu").addLore("&e► Click to return to the main menu.").create());
+        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu")
+                                                         .addLore("&e► Click to return to the main menu.")
+                                                         .create());
 
         GUI.setItem(34, new ItemBuilder(Material.SPECTRAL_ARROW).setDisplayName("&3Next page")
-                                                                .addLore("&eCurrently on page: &b" + page).addLore("&e► Click to view the next page.").create());
+                                                                .addLore("&eCurrently on page: &b" + page)
+                                                                .addLore("&e► Click to view the next page.")
+                                                                .create());
 
-        GUI.setItem(43, new ItemBuilder(Material.SPECTRAL_ARROW).setDisplayName("&3Previous page").addLore("&e► Click to view the previous page.").create());
+        GUI.setItem(43, new ItemBuilder(Material.SPECTRAL_ARROW).setDisplayName("&3Previous page")
+                                                                .addLore("&e► Click to view the previous page.")
+                                                                .create());
 
         ArrayList<ItemStack> itemStacks = new ArrayList<>();
         for (AchievementsEnum achievement : AchievementsEnum.values()) {
@@ -282,12 +304,16 @@ public class GUI {
     }
 
     private Inventory createUpgradesGUI() {
-        Material border = getCp().getSettings().getBorderPaneColor();
-        String lore1 = getCp().getSettings().getPrimaryLoreColor(); // blue
-        String lore2 = getCp().getSettings().getSecondaryLoreColor(); // green
-        String lore3 = getCp().getSettings().getTextLoreColor(); // white or gray
+        Material border = getCp().getSettings()
+                                 .getBorderPaneColor();
+        String lore1 = getCp().getSettings()
+                              .getPrimaryLoreColor(); // blue
+        String lore2 = getCp().getSettings()
+                              .getSecondaryLoreColor(); // green
+        String lore3 = getCp().getSettings()
+                              .getTextLoreColor(); // white or gray
 
-        setGUItitle(Listeners.getUpgradesGuiTitleAddendum());
+        setGUItitle(UPGRADES_GUI_TITLE_ADDENDUM);
         Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
 
         im.setInventoryBorder(GUI, border);
@@ -296,11 +322,14 @@ public class GUI {
         GUI.setItem(16, im.getPlayerSkullItem(getCp().getPlayer()));
 
         //Back to Main Menu button
-        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu").addLore("&e► Click to return to the main menu.").create());
+        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu")
+                                                         .addLore("&e► Click to return to the main menu.")
+                                                         .create());
 
         //Prestige button
         ClickingPlayerData cpd = getCp().getData();
-        String earnings = lore3 + "Prestige to earn " + lore1 + cpd.calculateAvailablePrestigeLevels() + " Coins " + lore3 + "and " + lore1 + "levels" + lore3 + "!";
+        String earnings =
+                lore3 + "Prestige to earn " + lore1 + cpd.calculateAvailablePrestigeLevels() + " Coins " + lore3 + "and " + lore1 + "levels" + lore3 + "!";
 
         GUI.setItem(34, new ItemBuilder(Material.NETHER_STAR).setDisplayName("&3Prestige Shop")
                                                              .addLore(lore2 + "&e► Click to open!")
@@ -310,22 +339,28 @@ public class GUI {
         GUI.setItem(43, new ItemBuilder(Material.TIPPED_ARROW)
                 .setDisplayName("&3Back")
                 .addLore("&e► Click to return to the Shop.")
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS)
-                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES).create());
+                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                .create());
 
         return GUI;
     }
 
     private Inventory createPreferencesGUI() {
         {
-            Material pane1 = getCp().getSettings().getPrimaryPaneColor();
-            Material pane2 = getCp().getSettings().getSecondaryPaneColor();
-            Material border = getCp().getSettings().getBorderPaneColor();
-            String lore1 = getCp().getSettings().getPrimaryLoreColor(); // blue
-            String lore2 = getCp().getSettings().getSecondaryLoreColor(); // green
-            String lore3 = getCp().getSettings().getTextLoreColor(); // white or gray
+            Material pane1 = getCp().getSettings()
+                                    .getPrimaryPaneColor();
+            Material pane2 = getCp().getSettings()
+                                    .getSecondaryPaneColor();
+            Material border = getCp().getSettings()
+                                     .getBorderPaneColor();
+            String lore1 = getCp().getSettings()
+                                  .getPrimaryLoreColor(); // blue
+            String lore2 = getCp().getSettings()
+                                  .getSecondaryLoreColor(); // green
+            String lore3 = getCp().getSettings()
+                                  .getTextLoreColor(); // white or gray
 
-            setGUItitle(Listeners.getPreferencesGuiTitleAddendum());
+            setGUItitle(PREFERENCES_GUI_TITLE_ADDENDUM);
             Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
 
             im.setInventoryBorder(GUI, border);
@@ -334,8 +369,9 @@ public class GUI {
             GUI.setItem(16, im.getPlayerSkullItem(getCp().getPlayer()));
 
             //Back to Main Menu button
-            GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu").addLore("&e► Click to return to the main menu.").create());
-
+            GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu")
+                                                             .addLore("&e► Click to return to the main menu.")
+                                                             .create());
 
             Material enabled = Material.LIME_DYE;
             Material disabled = Material.GRAY_DYE;
@@ -349,28 +385,33 @@ public class GUI {
             GUI.setItem(10, new ItemBuilder(cps.isInventoryDarkMode() ? enabled : disabled)
                     .setDisplayName(lore1 + "Interface dark mode")
                     .addLore(cps.isInventoryDarkMode() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
             GUI.setItem(11, new ItemBuilder(cps.isLoreDarkMode() ? enabled : disabled)
                     .setDisplayName(lore1 + "Text dark mode")
                     .addLore(cps.isLoreDarkMode() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
             GUI.setItem(12, new ItemBuilder(cps.isDoChatMessages() ? enabled : disabled)
                     .setDisplayName(lore1 + "Chat messages")
                     .addLore(cps.isDoChatMessages() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
             GUI.setItem(13, new ItemBuilder(cps.isDoSoundEffects() ? enabled : disabled)
                     .setDisplayName(lore1 + "Sound effects")
                     .addLore(cps.isDoSoundEffects() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
             GUI.setItem(14, new ItemBuilder(cps.isDoFirework() ? enabled : disabled)
                     .setDisplayName(lore1 + "Firework effects")
                     .addLore(cps.isDoFirework() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
             GUI.setItem(19, new ItemBuilder(cps.isDoBigNumbers() ? enabled : disabled)
                     .setDisplayName(lore1 + "Big Numbers")
                     .addLore(cps.isDoBigNumbers() ? enabledS : disabledS)
-                    .addLore(lore3 + "► Click to toggle setting.").create());
-
+                    .addLore(lore3 + "► Click to toggle setting.")
+                    .create());
 
             im.setInventoryPattern(GUI, false, pane1, pane2);
 
@@ -379,12 +420,16 @@ public class GUI {
     }
 
     private Inventory createPrestigeShopGUI() {
-        Material border = cp.getSettings().getBorderPaneColor();
-        String lore1 = getCp().getSettings().getPrimaryLoreColor(); // blue
-        String lore2 = getCp().getSettings().getSecondaryLoreColor(); // green
-        String lore3 = getCp().getSettings().getTextLoreColor(); // white or gray
+        Material border = cp.getSettings()
+                            .getBorderPaneColor();
+        String lore1 = getCp().getSettings()
+                              .getPrimaryLoreColor(); // blue
+        String lore2 = getCp().getSettings()
+                              .getSecondaryLoreColor(); // green
+        String lore3 = getCp().getSettings()
+                              .getTextLoreColor(); // white or gray
 
-        setGUItitle(Listeners.getPrestigeShop());
+        setGUItitle(PRESTIGE_SHOP);
         Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
 
         im.setInventoryBorder(GUI, border);
@@ -417,14 +462,18 @@ public class GUI {
         GUI.setItem(16, im.getPlayerSkullItem(getCp().getPlayer()));
 
         //Back to Main Menu button
-        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu").addLore("&e► Click to return to the main menu.").create());
+        GUI.setItem(25, new ItemBuilder(Material.BARRIER).setDisplayName("&3Menu")
+                                                         .addLore("&e► Click to return to the main menu.")
+                                                         .create());
 
         //Prestige button
         ClickingPlayerData cpd = getCp().getData();
-        String earnings = lore3 + "Prestige to earn " + lore1 + cpd.calculateAvailablePrestigeLevels() + " Coins " + lore3 + "and " + lore1 + "levels" + lore3 + "!";
+        String earnings =
+                lore3 + "Prestige to earn " + lore1 + cpd.calculateAvailablePrestigeLevels() + " Coins " + lore3 + "and " + lore1 + "levels" + lore3 + "!";
 
         GUI.setItem(34, new ItemBuilder(Material.NETHER_STAR).setDisplayName("&3Prestige")
-                                                             .addLore(im.makeLore30CharsPerLine("Prestige resets about everything, but you earn Coins in return!", lore3))
+                                                             .addLore(im.makeLore30CharsPerLine(
+                                                                     "Prestige resets about everything, but you earn Coins in return!", lore3))
                                                              .addLore(cpd.canPrestige() ? earnings : lore3 + "You can not prestige yet.")
                                                              .addLore(cpd.canPrestige() ? lore2 + "&e► Click to prestige!" : "")
                                                              .create());
@@ -433,8 +482,8 @@ public class GUI {
         GUI.setItem(43, new ItemBuilder(Material.TIPPED_ARROW)
                 .setDisplayName("&3Back")
                 .addLore("&e► Click to return to the Upgrades Shop.")
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS)
-                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES).create());
+                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                .create());
 
         return GUI;
     }
@@ -461,7 +510,9 @@ public class GUI {
 
     private void fillAchievementsGui(Inventory gui, ArrayList<ItemStack> items, int bound1, int bound2) {
         for (int i = bound1; i < bound2; i++) {
-            if (i == items.size() || gui.firstEmpty() == -1) return;
+            if (i == items.size() || gui.firstEmpty() == -1) {
+                return;
+            }
             gui.setItem(gui.firstEmpty(), items.get(i));
         }
     }

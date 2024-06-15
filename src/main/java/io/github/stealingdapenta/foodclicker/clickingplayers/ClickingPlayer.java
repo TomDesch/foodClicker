@@ -1,40 +1,5 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
-import io.github.stealingdapenta.foodclicker.FoodClicker;
-import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
-import io.github.stealingdapenta.foodclicker.basics.Buildings;
-import io.github.stealingdapenta.foodclicker.basics.Clickable;
-import io.github.stealingdapenta.foodclicker.basics.GUI;
-import io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum;
-import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
-import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnEvents;
-import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
-import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import io.github.stealingdapenta.foodclicker.utils.RepeatingClickerTask;
-import org.bukkit.Bukkit;
-import org.bukkit.Color;
-import org.bukkit.FireworkEffect;
-import org.bukkit.Location;
-import org.bukkit.Material;
-import org.bukkit.Sound;
-import org.bukkit.entity.EntityType;
-import org.bukkit.entity.Firework;
-import org.bukkit.entity.Player;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.InventoryView;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-import org.bukkit.inventory.meta.FireworkMeta;
-
-import java.math.BigDecimal;
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.Iterator;
-import java.util.List;
-import java.util.Random;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -58,18 +23,61 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.PERMAN
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.PERMANENTINCOMEMULTIPLIER;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STONKS;
 
+import io.github.stealingdapenta.foodclicker.FoodClicker;
+import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
+import io.github.stealingdapenta.foodclicker.basics.Buildings;
+import io.github.stealingdapenta.foodclicker.basics.Clickable;
+import io.github.stealingdapenta.foodclicker.basics.GUI;
+import io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum;
+import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
+import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnEvents;
+import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
+import io.github.stealingdapenta.foodclicker.utils.RepeatingClickerTask;
+import java.math.BigDecimal;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
+import java.util.Iterator;
+import java.util.List;
+import java.util.Random;
+import lombok.Getter;
+import org.bukkit.Bukkit;
+import org.bukkit.Color;
+import org.bukkit.FireworkEffect;
+import org.bukkit.Location;
+import org.bukkit.Material;
+import org.bukkit.Sound;
+import org.bukkit.entity.EntityType;
+import org.bukkit.entity.Firework;
+import org.bukkit.entity.Player;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
+import org.bukkit.inventory.meta.FireworkMeta;
+
 public class ClickingPlayer {
     private static final InventoryManager im = InventoryManager.getInstance();
     private static final Random r = new Random();
+    @Getter
     private final Player player;
+    @Getter
     private final ArrayList<Clickable> activeEvents;
+    @Getter
     private final ArrayList<Clickable> activeBoosts;
     private final ClickingPlayerData cpd;
     private final ClickingPlayerSettings cps;
+    @Getter
     private GUI gui;
+    @Getter
     private RepeatingClickerTask repeatingClickerTask;
+    @Getter
     private double incomePerSecond;
+    @Getter
     private int closedDetector;
+    @Getter
     private boolean buymodeAll;
 
     public ClickingPlayer(Player player) {
@@ -105,12 +113,9 @@ public class ClickingPlayer {
         });
     }
 
-    public ArrayList<Clickable> getActiveEvents() {
-        return activeEvents;
-    }
-
     public boolean noActiveEvents() {
-        return this.getActiveEvents().size() == 0;
+        return this.getActiveEvents()
+                   .isEmpty();
     }
 
     public void addActiveEvent(Clickable c) {
@@ -119,7 +124,9 @@ public class ClickingPlayer {
 
     private void doSecondFromDurationFromAllActiveEvents() {
         if (getActiveEvents() == null) return;
-        if (getActiveEvents().size() == 0) return;
+        if (getActiveEvents().isEmpty()) {
+            return;
+        }
 
         for (Clickable c : getActiveEvents()) {
             c.setDuration(c.getDuration() - 1);
@@ -191,10 +198,6 @@ public class ClickingPlayer {
         return getActiveEvents().stream().filter(s -> s.getSlotPosition() == clickedSlot).findFirst().orElse(null);
     }
 
-    public ArrayList<Clickable> getActiveBoosts() {
-        return activeBoosts;
-    }
-
     public void eventGotClicked(Clickable c) {
         getData().addOneClickableClicked();
         getActiveEvents().remove(c);
@@ -240,7 +243,7 @@ public class ClickingPlayer {
     }
 
     public boolean areBoostsActive() {
-        return (getActiveBoosts() != null && getActiveBoosts().size() > 0);
+        return (getActiveBoosts() != null && !getActiveBoosts().isEmpty());
     }
 
     public void instantlyTerminateUpgrade(Clickable c) {
@@ -377,28 +380,12 @@ public class ClickingPlayer {
         };
     }
 
-    public boolean isBuymodeAll() {
-        return buymodeAll;
-    }
-
     public void setBuymodeAll(boolean buymodeAll) {
         this.buymodeAll = buymodeAll;
     }
 
-    public double getIncomePerSecond() {
-        return incomePerSecond;
-    }
-
     public void setIncomePerSecond(double incomePerSecond) {
         this.incomePerSecond = incomePerSecond;
-    }
-
-    public RepeatingClickerTask getRepeatingClickerTask() {
-        return this.repeatingClickerTask;
-    }
-
-    public GUI getGui() {
-        return gui;
     }
 
     public void earn(double amount) {
@@ -549,10 +536,6 @@ public class ClickingPlayer {
         setBuymodeAll(!isBuymodeAll());
     }
 
-    public int getClosedDetector() {
-        return this.closedDetector;
-    }
-
     public void setClosedDetector(int closedDetector) {
         this.closedDetector = closedDetector;
     }
@@ -607,7 +590,7 @@ public class ClickingPlayer {
 
     public ArrayList<ItemStack> getBuyableUpgrades() {
         //todo expand with based on events and achievements
-        ArrayList<ItemStack> items = new ArrayList<ItemStack>();
+        ArrayList<ItemStack> items = new ArrayList<>();
         for (UpgradesBasedOnStats u : UpgradesBasedOnStats.values()) {
             if (u.requirementMetAndNotUnlocked(this)) {
                 items.add(u.createItem(this));
@@ -632,10 +615,6 @@ public class ClickingPlayer {
             inv.setItem(inv.firstEmpty(), buyableUpgrades.get(i));
         }
         im.setInventoryPattern(inv, false, getSettings().getPrimaryPaneColor(), getSettings().getSecondaryPaneColor());
-    }
-
-    public Player getPlayer() {
-        return player;
     }
 
     public boolean itemIsBuyableUpgrade(ItemStack item) {
@@ -666,7 +645,7 @@ public class ClickingPlayer {
         int amount = getData().getSpecificBuildingAmount(b);
         List<AchievementsEnum> achievementsEnums =
                 Arrays.asList(Arrays.stream(AchievementsEnum.values()).filter(a -> a.getBuilding() != null && a.getBuilding() == b).toArray(AchievementsEnum[]::new));
-        if (achievementsEnums.size() >= 1 && amount >= 100 && amount < 500) {
+        if (!achievementsEnums.isEmpty() && amount >= 100 && amount < 500) {
             unlockAchievement(achievementsEnums.get(0));
         } else if (achievementsEnums.size() >= 2 && amount >= 500 && amount < 1000) {
             unlockAchievement(achievementsEnums.get(1));
@@ -728,7 +707,8 @@ public class ClickingPlayer {
             Location loc = getPlayer().getLocation();
             if (loc.getWorld() == null) return;
             Random r = new Random();
-            Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK);
+            Firework fw = (Firework) loc.getWorld()
+                                        .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
             FireworkMeta fwm = fw.getFireworkMeta();
 
             fwm.setPower(size);
@@ -740,9 +720,10 @@ public class ClickingPlayer {
                     fwm.clearEffects();
                     fwm.addEffect(FireworkEffect.builder().withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))).flicker(true).trail(true).build());
 
-                    Firework fw2 = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK);
+                    Firework fw2 = (Firework) loc.getWorld()
+                                                 .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
                     fw2.setFireworkMeta(fwm);
-                }, (1L + i * 4));
+                }, (1L + i * 4L));
             }
         }
     }

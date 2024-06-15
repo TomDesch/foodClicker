@@ -1,24 +1,25 @@
 package io.github.stealingdapenta.foodclicker.upgrades;
 
+import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.CHEAP;
+import static org.bukkit.Material.APPLE;
+
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
+import java.util.Arrays;
+import java.util.List;
+import java.util.stream.Collectors;
+import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
-import java.util.Arrays;
-import java.util.List;
-import java.util.stream.Collectors;
-
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.CHEAP;
-import static org.bukkit.Material.APPLE;
-
 public enum UpgradesBasedOnStats {
 
     CLICK_0("Clickyfier", APPLE, 50D, 1.10, "cookie", 10, "Click Multiplier", "• Clicking is 10% more effective."),
-    CLICK_1("Clickyfier", APPLE, 100D, 1.10, "cookie", 100, "Click Multiplier", "&2Congratulations! You clicked &b100 &2times!", "• Clicking is 10% more effective."),
+    CLICK_1("Clickyfier", APPLE, 100D, 1.10, "cookie", 100, "Click Multiplier", "&2Congratulations! You clicked &b100 &2times!",
+            "• Clicking is 10% more effective."),
     CLICK_2("Clickyfier", APPLE, 250D, 1.10, "cookie", 200, "Click Multiplier", "• Clicking is 10% more effective."),
     CLICK_3("Clickyfier", APPLE, 500D, 1.15, "cookie", 250, "Click Multiplier", "• Clicking is 15% more effective."),
     CLICK_4("Clickyfier", APPLE, 1_000D, 1.20, "cookie", 500, "Click Multiplier", "• Clicking is 20% more effective."),
@@ -32,18 +33,27 @@ public enum UpgradesBasedOnStats {
 
     CLICK_11("Mouse Breaker", APPLE, 10_000_000D, 2, "cookie", 500_000, "Click Multiplier", "• Clicking is 100% more effective.");
 
+    @Getter
     private final String name;
+    @Getter
     private final String requiredKey;
+    @Getter
     private final int requiredValue;
+    @Getter
     private final List<String> lore;
     private final double cost;
+    @Getter
     private final double multiplierIncrease;
+    @Getter
     private final String affectingKey;
+    @Getter
     private final String unlockedKey;
     private final InventoryManager im = InventoryManager.getInstance();
+    @Getter
     private final Material material;
 
-    UpgradesBasedOnStats(String name, Material material, double cost, double multiplierIncrease, String requiredKey, int requiredValue, String affectingKey, String... lore) {
+    UpgradesBasedOnStats(String name, Material material, double cost, double multiplierIncrease, String requiredKey, int requiredValue, String affectingKey,
+                         String... lore) {
         this.name = name;
         this.requiredKey = requiredKey;
         this.requiredValue = requiredValue;
@@ -55,47 +65,23 @@ public enum UpgradesBasedOnStats {
         this.affectingKey = affectingKey;
     }
 
-    public String getUnlockedKey() {
-        return unlockedKey;
-    }
-
-    public String getAffectingKey() {
-        return affectingKey;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getRequiredKey() {
-        return requiredKey;
-    }
-
-    public int getRequiredValue() {
-        return requiredValue;
-    }
-
-    public List<String> getLore() {
-        return lore;
-    }
-
     public double getCost(ClickingPlayer cp) {
         return cost - (cost * CHEAP.getCurrentBonus(cp) / 100);
     }
 
-    public double getMultiplierIncrease() {
-        return multiplierIncrease;
-    }
-
-    public Material getMaterial() {
-        return material;
-    }
-
     private boolean requiredValueIsMet(ClickingPlayer cp) {
-        if (cp.getData().getGeneralIntegerStats().containsKey(getRequiredKey())) {
-            return cp.getData().getGeneralIntegerStats().get(getRequiredKey()) >= getRequiredValue();
-        } else if (cp.getData().getGeneralDoubleStats().containsKey(getRequiredKey())) {
-            return cp.getData().getGeneralDoubleStats().get(getRequiredKey()) >= getRequiredValue();
+        if (cp.getData()
+              .getGeneralIntegerStats()
+              .containsKey(getRequiredKey())) {
+            return cp.getData()
+                     .getGeneralIntegerStats()
+                     .get(getRequiredKey()) >= getRequiredValue();
+        } else if (cp.getData()
+                     .getGeneralDoubleStats()
+                     .containsKey(getRequiredKey())) {
+            return cp.getData()
+                     .getGeneralDoubleStats()
+                     .get(getRequiredKey()) >= getRequiredValue();
         } else {
             System.out.println("FoodClicker: Error in Upgrades Based On Stats!");
             return false;
@@ -103,16 +89,26 @@ public enum UpgradesBasedOnStats {
     }
 
     public boolean upgradeIsUnlocked(ClickingPlayer cp) {
-        return cp.getData().getUpgradesUnlocked().get(getUnlockedKey());
+        return cp.getData()
+                 .getUpgradesUnlocked()
+                 .get(getUnlockedKey());
     }
 
     private void setUpgradeUnlocked(ClickingPlayer cp) {
-        cp.getData().getUpgradesUnlocked().put(getUnlockedKey(), true);
+        cp.getData()
+          .getUpgradesUnlocked()
+          .put(getUnlockedKey(), true);
     }
 
     private void getEffectsFromUnlocking(ClickingPlayer cp) {
-        if (cp.getData().getGeneralDoubleStats().containsKey(getAffectingKey())) {
-            cp.getData().getGeneralDoubleStats().put(getAffectingKey(), cp.getData().getGeneralDoubleStats().get(getAffectingKey()) * getMultiplierIncrease());
+        if (cp.getData()
+              .getGeneralDoubleStats()
+              .containsKey(getAffectingKey())) {
+            cp.getData()
+              .getGeneralDoubleStats()
+              .put(getAffectingKey(), cp.getData()
+                                        .getGeneralDoubleStats()
+                                        .get(getAffectingKey()) * getMultiplierIncrease());
         } else {
             System.out.println("FoodClicker: Error in Upgrades Based On Stats!");
         }
@@ -144,15 +140,18 @@ public enum UpgradesBasedOnStats {
     }
 
     public ItemStack createItem(ClickingPlayer cp) {
-        String lore1 = cp.getSettings().getPrimaryLoreColor(); // blue
-        String lore2 = cp.getSettings().getSecondaryLoreColor(); // green
+        String lore1 = cp.getSettings()
+                         .getPrimaryLoreColor(); // blue
+        String lore2 = cp.getSettings()
+                         .getSecondaryLoreColor(); // green
 
-        return new ItemBuilder(getMaterial())
-                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS)
-                .setDisplayName(lore1 + getName())
-                .addLore(getLore().stream().map(s -> lore2 + s).collect(Collectors.toList()))
-                .addLore("&6Price: &c£" + im.truncateNumber(getCost(cp), cp))
-                .setGlowing(true).create();
+        return new ItemBuilder(getMaterial()).addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                                             .setDisplayName(lore1 + getName())
+                                             .addLore(getLore().stream()
+                                                               .map(s -> lore2 + s)
+                                                               .collect(Collectors.toList()))
+                                             .addLore("&6Price: &c£" + im.truncateNumber(getCost(cp), cp))
+                                             .setGlowing(true)
+                                             .create();
     }
 }

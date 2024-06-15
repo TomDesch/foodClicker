@@ -12,8 +12,11 @@ public final class RootCalculus {
     }
 
     public static BigDecimal nthRoot(final int n, final BigDecimal a) {
-        if (n < 1) return BigDecimal.ZERO;
-        return nthRoot(n, a, BigDecimal.valueOf(.1).movePointLeft(SCALE));
+        if (n < 1) {
+            return BigDecimal.ZERO;
+        }
+        return nthRoot(n, a, BigDecimal.valueOf(.1)
+                                       .movePointLeft(SCALE));
     }
 
     private static BigDecimal nthRoot(final int n, final BigDecimal a, final BigDecimal p) {
@@ -25,7 +28,9 @@ public final class RootCalculus {
         }
         BigDecimal xPrev = a;
         BigDecimal x = a.divide(new BigDecimal(n), SCALE, ROUNDING_MODE);  // starting "guessed" value...
-        while (x.subtract(xPrev).abs().compareTo(p) > 0) {
+        while (x.subtract(xPrev)
+                .abs()
+                .compareTo(p) > 0) {
             xPrev = x;
             x = BigDecimal.valueOf(n - 1.0)
                           .multiply(x)

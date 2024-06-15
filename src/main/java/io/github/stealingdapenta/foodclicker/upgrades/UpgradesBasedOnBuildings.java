@@ -1,18 +1,5 @@
 package io.github.stealingdapenta.foodclicker.upgrades;
 
-import io.github.stealingdapenta.foodclicker.basics.Buildings;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import org.bukkit.Material;
-import org.bukkit.inventory.Inventory;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-
-import java.math.BigDecimal;
-import java.util.Arrays;
-import java.util.List;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -26,6 +13,19 @@ import static io.github.stealingdapenta.foodclicker.basics.Buildings.MOM;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.POPUP;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.RESTAURANT;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.CHEAP;
+
+import io.github.stealingdapenta.foodclicker.basics.Buildings;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
+import java.math.BigDecimal;
+import java.util.Arrays;
+import java.util.List;
+import lombok.Getter;
+import org.bukkit.Material;
+import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 
 public enum UpgradesBasedOnBuildings {
 
@@ -166,15 +166,23 @@ public enum UpgradesBasedOnBuildings {
     HOUSEHOLDNAME_9("Stock market", HOUSEHOLDNAME, 1.95, 750),
     HOUSEHOLDNAME_10("Stock market", HOUSEHOLDNAME, 2, 1000);
 
+    @Getter
     private final String name;
+    @Getter
     private final String requiredKey;
+    @Getter
     private final int requiredValue;
+    @Getter
     private final List<String> lore;
     private final BigDecimal cost;
+    @Getter
     private final double multiplierIncrease;
+    @Getter
     private final String unlockedKey;
     private final InventoryManager im = InventoryManager.getInstance();
+    @Getter
     private final Buildings b;
+    @Getter
     private final Material material;
 
 
@@ -190,68 +198,32 @@ public enum UpgradesBasedOnBuildings {
         this.unlockedKey = getRequiredKey() + getRequiredValue();
     }
 
-    UpgradesBasedOnBuildings(String name, Buildings b, double cost, double multiplierIncrease, int requiredValue, String... lore) {
-        this.name = name;
-        this.requiredKey = b.getName();
-        this.requiredValue = requiredValue;
-        this.lore = Arrays.asList(lore);
-        this.b = b;
-        this.cost = BigDecimal.valueOf(cost);
-        this.material = b.getMaterial();
-        this.multiplierIncrease = multiplierIncrease;
-        this.unlockedKey = getRequiredKey() + getRequiredValue();
-    }
-
-    public String getUnlockedKey() {
-        return unlockedKey;
-    }
-
-    public Buildings getB() {
-        return b;
-    }
-
-    public String getName() {
-        return name;
-    }
-
-    public String getRequiredKey() {
-        return requiredKey;
-    }
-
-    public int getRequiredValue() {
-        return requiredValue;
-    }
-
-    public List<String> getLore() {
-        return lore;
-    }
-
     public BigDecimal getCost(ClickingPlayer cp) {
         return cost.subtract(cost.multiply(BigDecimal.valueOf(CHEAP.getCurrentBonus(cp) / 100)));
     }
 
-    public double getMultiplierIncrease() {
-        return multiplierIncrease;
-    }
-
-    public Material getMaterial() {
-        return material;
-    }
-
     private boolean requiredValueIsMet(ClickingPlayer cp) {
-        return cp.getData().getSpecificBuildingAmount(getB()) >= getRequiredValue();
+        return cp.getData()
+                 .getSpecificBuildingAmount(getB()) >= getRequiredValue();
     }
 
     public boolean upgradeIsUnlocked(ClickingPlayer cp) {
-        return cp.getData().getUpgradesUnlocked().get(getUnlockedKey());
+        return cp.getData()
+                 .getUpgradesUnlocked()
+                 .get(getUnlockedKey());
     }
 
     private void setUpgradeUnlocked(ClickingPlayer cp) {
-        cp.getData().getUpgradesUnlocked().put(getUnlockedKey(), true);
+        cp.getData()
+          .getUpgradesUnlocked()
+          .put(getUnlockedKey(), true);
     }
 
     private void getEffectsFromUnlocking(ClickingPlayer cp) {
-        cp.getData().getBuildingsBaseMultipliers().put(getB(), cp.getData().getSpecificBuildingsBaseMultiplier(getB()) * getMultiplierIncrease());
+        cp.getData()
+          .getBuildingsBaseMultipliers()
+          .put(getB(), cp.getData()
+                         .getSpecificBuildingsBaseMultiplier(getB()) * getMultiplierIncrease());
     }
 
     public void possiblyBuyUpgrade(ClickingPlayer cp, Inventory inv, int slot) {
@@ -280,17 +252,19 @@ public enum UpgradesBasedOnBuildings {
     }
 
     public ItemStack createItem(ClickingPlayer cp) {
-        String lore1 = cp.getSettings().getPrimaryLoreColor(); // blue
-        String lore2 = cp.getSettings().getSecondaryLoreColor(); // green
+        String lore1 = cp.getSettings()
+                         .getPrimaryLoreColor(); // blue
+        String lore2 = cp.getSettings()
+                         .getSecondaryLoreColor(); // green
 
-        return new ItemBuilder(getMaterial())
-                .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS)
-                .setDisplayName(lore1 + getName())
-                .addLore(getLore())
-                .addLore(lore2 + "• " + b.getName() + "s are " + lore1 + im.makeNumbersPretty((getMultiplierIncrease() - 1) * 100) + "%" + lore2 + " more effective.")
-                .addLore("&6Price: &c£" + im.truncateNumber(getCost(cp), cp))
-                .setGlowing(true).create();
+        return new ItemBuilder(getMaterial()).addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                                             .setDisplayName(lore1 + getName())
+                                             .addLore(getLore())
+                                             .addLore(lore2 + "• " + b.getName() + "s are " + lore1 + im.makeNumbersPretty((getMultiplierIncrease() - 1) * 100)
+                                                              + "%" + lore2 + " more effective.")
+                                             .addLore("&6Price: &c£" + im.truncateNumber(getCost(cp), cp))
+                                             .setGlowing(true)
+                                             .create();
     }
 
 }

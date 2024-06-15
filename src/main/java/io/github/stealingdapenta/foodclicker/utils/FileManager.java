@@ -1,18 +1,21 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
+import static io.github.stealingdapenta.foodclicker.FoodClicker.LOGGER;
+
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import org.bukkit.ChatColor;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.IOException;
 import java.io.PrintWriter;
 import java.math.BigDecimal;
+import java.util.Objects;
+import org.bukkit.ChatColor;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
 
 public class FileManager {
+
     private static FileManager fileManager;
 
     private FileManager() {
@@ -36,7 +39,6 @@ public class FileManager {
 
     public BigDecimal getBigDecimalByKey(ClickingPlayer cp, String key) {
         String bigString = getConfig(cp).getString(key, "0");
-        if (bigString == null) return new BigDecimal(0);
         return new BigDecimal(bigString);
     }
 
@@ -46,7 +48,7 @@ public class FileManager {
         try {
             c.save(getPlayerFile(cp));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -82,7 +84,7 @@ public class FileManager {
         try {
             c.save(getPlayerFile(cp));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -96,7 +98,7 @@ public class FileManager {
         try {
             c.save(getPlayerFile(cp));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -110,7 +112,7 @@ public class FileManager {
         try {
             c.save(getPlayerFile(cp));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -120,7 +122,7 @@ public class FileManager {
         try {
             c.save(getPlayerFile(cp));
         } catch (IOException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
     }
 
@@ -132,29 +134,29 @@ public class FileManager {
         return YamlConfiguration.loadConfiguration(getPlayerFile(cp));
     }
 
-    public void createFile(ClickingPlayer cp) {
-        createFile(cp.getPlayer());
-    }
-
     public void createFile(Player cp) {
-        File file = new File(getUserFiles(), cp.getPlayer().getUniqueId().toString() + ".yml");
+        File file = new File(getUserFiles(), Objects.requireNonNull(cp.getPlayer())
+                                                    .getUniqueId() + ".yml");
         PrintWriter writer = null;
         try {
             writer = new PrintWriter(file);
         } catch (FileNotFoundException e) {
-            e.printStackTrace();
+            LOGGER.severe(e.getMessage());
         }
         try {
             file.createNewFile();
 
             writer = new PrintWriter(file);
-            writer.println("Player Name: " + cp.getPlayer().getName());
+            writer.println("Player Name: " + cp.getPlayer()
+                                               .getName());
 
-            System.out.println("FoodClicker: " + cp.getPlayer().getName() + "'s FoodClicker file created.");
+            System.out.println("FoodClicker: " + cp.getPlayer()
+                                                   .getName() + "'s FoodClicker file created.");
         } catch (IOException e1) {
             System.out.println(ChatColor.RED + "FoodClicker Player file creation failed!");
-            e1.printStackTrace();
+            LOGGER.severe(e1.getMessage());
         } finally {
+            assert writer != null;
             writer.close();
         }
     }
@@ -164,7 +166,8 @@ public class FileManager {
     }
 
     public File getPlayerFile(Player cp) {
-        File file = new File(getUserFiles(), cp.getPlayer().getUniqueId().toString() + ".yml");
+        File file = new File(getUserFiles(), Objects.requireNonNull(cp.getPlayer())
+                                                    .getUniqueId() + ".yml");
 
         if (!file.exists()) {
             createFile(cp);
@@ -175,7 +178,8 @@ public class FileManager {
     }
 
     public File getUserFiles() {
-        File userFiles = new File(FoodClicker.getInstance().getDataFolder() + File.separator + "foodclicker");
+        File userFiles = new File(FoodClicker.getInstance()
+                                             .getDataFolder() + File.separator + "foodclicker");
         if (!userFiles.exists()) {
             userFiles.mkdirs();
         }
@@ -187,14 +191,17 @@ public class FileManager {
     }
 
     public void savePlayerFile(Player cp) {
-        String uuid = cp.getPlayer().getUniqueId().toString();
+        String uuid = Objects.requireNonNull(cp.getPlayer())
+                             .getUniqueId()
+                             .toString();
         File file = new File(getUserFiles(), uuid + ".yml");
 
         if (!file.exists()) {
             createFile(cp);
         }
         try {
-            YamlConfiguration.loadConfiguration(file).save(file);
+            YamlConfiguration.loadConfiguration(file)
+                             .save(file);
         } catch (IOException e) {
             System.out.println("foodclicker wtf @ saving file");
         }

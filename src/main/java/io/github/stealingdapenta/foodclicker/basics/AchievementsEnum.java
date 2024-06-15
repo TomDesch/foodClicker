@@ -1,16 +1,5 @@
 package io.github.stealingdapenta.foodclicker.basics;
 
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import org.bukkit.Material;
-import org.bukkit.inventory.ItemFlag;
-import org.bukkit.inventory.ItemStack;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -23,6 +12,17 @@ import static io.github.stealingdapenta.foodclicker.basics.Buildings.HOUSEHOLDNA
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.MOM;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.POPUP;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.RESTAURANT;
+
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
+import lombok.Getter;
+import org.bukkit.Material;
+import org.bukkit.inventory.ItemFlag;
+import org.bukkit.inventory.ItemStack;
 
 public enum AchievementsEnum {
 
@@ -160,8 +160,11 @@ public enum AchievementsEnum {
     ;
 
     private static final InventoryManager im = InventoryManager.getInstance();
+    @Getter
     private final String achievement;
+    @Getter
     private final Material material;
+    @Getter
     private final String[] lore;
     private final Buildings b;
 
@@ -183,10 +186,6 @@ public enum AchievementsEnum {
         return this.b;
     }
 
-    public String getAchievement() {
-        return achievement;
-    }
-
     public ItemStack createItem(ClickingPlayer cp) {
         String titleColor = cp.getSettings().getPrimaryLoreColor();
 
@@ -194,15 +193,8 @@ public enum AchievementsEnum {
                 .setDisplayName(titleColor + getAchievement())
                 .addLore(fixLore(cp))
                 .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
-                .addItemFlags(ItemFlag.HIDE_POTION_EFFECTS).create();
-    }
-
-    public Material getMaterial() {
-        return material;
-    }
-
-    public String[] getLore() {
-        return lore;
+                .addItemFlags(ItemFlag.HIDE_ENCHANTS)
+                .create();
     }
 
     private List<String> fixLore(ClickingPlayer cp) {

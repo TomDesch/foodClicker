@@ -6,7 +6,48 @@
 
     <groupId>io.github.stealingdapenta</groupId>
     <artifactId>FoodClicker</artifactId>
-    <version>2.15</version>
+    <dependencies>
+        <dependency>
+            <artifactId>spigot-api</artifactId>
+            <groupId>org.spigotmc</groupId>
+            <scope>provided</scope>
+            <version>1.20.6-R0.1-SNAPSHOT</version>
+        </dependency>
+
+        <dependency>
+            <artifactId>lombok</artifactId>
+            <groupId>org.projectlombok</groupId>
+            <optional>true</optional>
+            <version>1.18.28</version>
+        </dependency>
+
+        <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
+        <dependency>
+            <artifactId>HikariCP</artifactId>
+            <groupId>com.zaxxer</groupId>
+            <version>5.0.1</version>
+        </dependency>
+
+        <!-- JPA API -->
+        <dependency>
+            <artifactId>javax.persistence-api</artifactId>
+            <groupId>javax.persistence</groupId>
+            <version>2.2</version>
+        </dependency>
+
+        <dependency>
+            <artifactId>adventure-api</artifactId>
+            <groupId>net.kyori</groupId>
+            <version>4.17.0</version>
+        </dependency>
+        <dependency>
+            <artifactId>adventure-text-serializer-legacy</artifactId>
+            <groupId>net.kyori</groupId>
+            <version>4.17.0</version>
+        </dependency>
+
+
+    </dependencies>
 
     <build>
         <plugins>
@@ -22,38 +63,12 @@
     </build>
     <repositories>
         <repository>
-            <id>spigotmc-repo</id>
+            <id>spigot-repo</id>
             <url>https://hub.spigotmc.org/nexus/content/repositories/snapshots/</url>
         </repository>
     </repositories>
 
-    <dependencies>
-        <dependency>
-            <groupId>org.spigotmc....</groupId>
-            <artifactId>spigot</artifactId>
-            <version>1.15.2-R0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc...</groupId>
-            <artifactId>spigot</artifactId>
-            <version>1.16.1-R0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc..</groupId>
-            <artifactId>spigot</artifactId>
-            <version>1.16.2-R0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc.</groupId>
-            <artifactId>spigot</artifactId>
-            <version>1.16.3-R0.1-SNAPSHOT</version>
-        </dependency>
-        <dependency>
-            <groupId>org.spigotmc</groupId>
-            <artifactId>spigot</artifactId>
-            <version>1.16.4-R0.1-SNAPSHOT</version>
-        </dependency>
-    </dependencies>
+    <version>3.0.0</version>
     <properties>
         <project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
         <project.reporting.outputEncoding>UTF-8</project.reporting.outputEncoding>

@@ -1,5 +1,9 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
+import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHCHEFS;
+import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHEVENCHANCE;
+import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHMOMS;
+
 import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
 import io.github.stealingdapenta.foodclicker.basics.Buildings;
 import io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum;
@@ -7,30 +11,38 @@ import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
 import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.RootCalculus;
-
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
-
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHCHEFS;
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHEVENCHANCE;
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHMOMS;
+import lombok.Getter;
 
 public class ClickingPlayerData {
 
     private final FileManager fm = FileManager.getInstance();
+    @Getter
     private final Map<Buildings, Integer> buildingsOwned;
+    @Getter
     private final Map<Buildings, Double> buildingsBaseMultipliers;
+    @Getter
     private final Map<Buildings, Double> buildingsBaseCostMultipliers;
+    @Getter
     private final Map<Buildings, Double> buildingsBaseCostIncreaser;
+    @Getter
     private final Map<String, Boolean> upgradesUnlocked;
+    @Getter
     private final Map<String, Integer> generalIntegerStats;
+    @Getter
     private final Map<String, Double> generalDoubleStats;
+    @Getter
     private final Map<String, BigDecimal> generalBigDecimals;
+    @Getter
     private final Map<String, Boolean> achievements;
+    @Getter
     private final Map<PrestigeEnum, Integer> prestigeShopBonusses;
+    @Getter
     private final ClickingPlayer cp;
+    @Getter
     private boolean prestigeHead;
 
     public ClickingPlayerData(ClickingPlayer cp) {
@@ -47,10 +59,6 @@ public class ClickingPlayerData {
         this.prestigeShopBonusses = new HashMap<>();
         this.achievements = new HashMap<>();
         this.prestigeHead = false;
-    }
-
-    public Map<PrestigeEnum, Integer> getPrestigeShopBonusses() {
-        return prestigeShopBonusses;
     }
 
     public long loadGameCloseDate() {
@@ -85,48 +93,8 @@ public class ClickingPlayerData {
         saveLoggedOutTime(0);
     }
 
-    public boolean isPrestigeHead() {
-        return prestigeHead;
-    }
-
     public void doPrestigeHead() {
         this.prestigeHead = !isPrestigeHead();
-    }
-
-    public ClickingPlayer getCp() {
-        return cp;
-    }
-
-    public Map<Buildings, Integer> getBuildingsOwned() {
-        return buildingsOwned;
-    }
-
-    public Map<Buildings, Double> getBuildingsBaseMultipliers() {
-        return buildingsBaseMultipliers;
-    }
-
-    public Map<Buildings, Double> getBuildingsBaseCostMultipliers() {
-        return buildingsBaseCostMultipliers;
-    }
-
-    public Map<String, Boolean> getUpgradesUnlocked() {
-        return upgradesUnlocked;
-    }
-
-    public Map<String, Integer> getGeneralIntegerStats() {
-        return generalIntegerStats;
-    }
-
-    public Map<String, BigDecimal> getGeneralBigDecimals() {
-        return generalBigDecimals;
-    }
-
-    public Map<String, Double> getGeneralDoubleStats() {
-        return generalDoubleStats;
-    }
-
-    public Map<Buildings, Double> getBuildingsBaseCostIncreaser() {
-        return buildingsBaseCostIncreaser;
     }
 
     public int calculateTotalBuildingsOwned() {
@@ -209,36 +177,36 @@ public class ClickingPlayerData {
 
     private void possiblyUnlockMoneyManAchievement() {
 
-        BigDecimal bankvalue = getGeneralBigDecimals().get("alltimeearnings");
+        BigDecimal bankValue = getGeneralBigDecimals().get("alltimeearnings");
 
-        if (bankvalue.compareTo(BigDecimal.valueOf(100)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN1);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(5000)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(5000)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN2);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(10000)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(10000)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN3);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN4);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN5);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000_000D)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000_000D)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN6);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000_000_000D)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000_000_000D)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN7);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000D)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000D)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN8);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000_000D)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000_000D)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN9);
         }
-        if (bankvalue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000_000_000D)) >= 0) {
+        if (bankValue.compareTo(BigDecimal.valueOf(100_000_000_000_000_000_000_000D)) >= 0) {
             getCp().unlockAchievement(AchievementsEnum.MONEYMAN10);
         }
     }
@@ -259,7 +227,7 @@ public class ClickingPlayerData {
         loadGeneralDoubleStats();
         loadGeneralBigDecimalStats();
         loadAchievements();
-        loadPrestigeBonusses();
+        loadPrestigeBonuses();
     }
 
     public void saveEverythingToFile() { // always do this async
@@ -274,24 +242,20 @@ public class ClickingPlayerData {
         saveGeneralDoubleStats();
         saveGeneralBigDecimalStats();
         saveAchievements();
-        savePrestigeBonusses();
+        savePrestigeBonuses();
         fm.savePlayerFile(cp);
     }
 
-    private void loadPrestigeBonusses() {
+    private void loadPrestigeBonuses() {
         for (PrestigeEnum prestigeEnum : PrestigeEnum.values()) {
             getPrestigeShopBonusses().put(prestigeEnum, fm.getIntByKey(getCp(), prestigeEnum.getKey()));
         }
     }
 
-    private void savePrestigeBonusses() {
+    private void savePrestigeBonuses() {
         for (Map.Entry<PrestigeEnum, Integer> entry : getPrestigeShopBonusses().entrySet()) {
             fm.setIntByKey(getCp(), entry.getKey().getKey(), entry.getValue());
         }
-    }
-
-    public Map<String, Boolean> getAchievements() {
-        return achievements;
     }
 
     private void loadAchievements() {

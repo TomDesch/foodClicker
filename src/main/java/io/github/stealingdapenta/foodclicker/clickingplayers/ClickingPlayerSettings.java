@@ -1,8 +1,10 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
 import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
+import lombok.Getter;
 import org.bukkit.Material;
 
+@Getter
 public class ClickingPlayerSettings {
     private final ClickingPlayer cp;
     private boolean inventoryDarkMode;
@@ -16,52 +18,24 @@ public class ClickingPlayerSettings {
         this.cp = cp;
     }
 
-    public boolean isDoBigNumbers() {
-        return doBigNumbers;
-    }
-
     public void setDoBigNumbers(boolean doBigNumbers) {
         this.doBigNumbers = doBigNumbers;
-    }
-
-    public ClickingPlayer getCp() {
-        return cp;
-    }
-
-    public boolean isInventoryDarkMode() {
-        return inventoryDarkMode;
     }
 
     public void setInventoryDarkMode(boolean inventoryDarkMode) {
         this.inventoryDarkMode = inventoryDarkMode;
     }
 
-    public boolean isLoreDarkMode() {
-        return loreDarkMode;
-    }
-
     public void setLoreDarkMode(boolean loreDarkMode) {
         this.loreDarkMode = loreDarkMode;
-    }
-
-    public boolean isDoChatMessages() {
-        return doChatMessages;
     }
 
     public void setDoChatMessages(boolean doChatMessages) {
         this.doChatMessages = doChatMessages;
     }
 
-    public boolean isDoSoundEffects() {
-        return doSoundEffects;
-    }
-
     public void setDoSoundEffects(boolean doSoundEffects) {
         this.doSoundEffects = doSoundEffects;
-    }
-
-    public boolean isDoFirework() {
-        return doFirework;
     }
 
     public void setDoFirework(boolean doFirework) {

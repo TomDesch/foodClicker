@@ -1,18 +1,13 @@
 package io.github.stealingdapenta.foodclicker.commands;
 
+import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.LOCALLEADERBOARD;
+import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
+
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import org.bukkit.Bukkit;
-import org.bukkit.command.Command;
-import org.bukkit.command.CommandExecutor;
-import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
-import org.bukkit.configuration.file.YamlConfiguration;
-import org.bukkit.entity.Player;
-
 import java.io.File;
 import java.math.BigDecimal;
 import java.util.Comparator;
@@ -20,9 +15,14 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.LOCALLEADERBOARD;
-import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
+import org.bukkit.Bukkit;
+import org.bukkit.command.Command;
+import org.bukkit.command.CommandExecutor;
+import org.bukkit.command.CommandSender;
+import org.bukkit.command.ConsoleCommandSender;
+import org.bukkit.configuration.file.YamlConfiguration;
+import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class TopCommand implements CommandExecutor {
     private static final InventoryManager im = InventoryManager.getInstance();
@@ -51,7 +51,7 @@ public class TopCommand implements CommandExecutor {
                                                   (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (sender instanceof ConsoleCommandSender) return true;
         Player p = (Player) sender;
         ClickingPlayer cp;

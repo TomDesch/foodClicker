@@ -1,14 +1,14 @@
 package io.github.stealingdapenta.foodclicker.commands;
 
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import org.bukkit.entity.Player;
-
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
+import org.bukkit.entity.Player;
 
 public class AntiSpamManager {
-    private static final Map<UUID, Long> spammersMap = new HashMap<UUID, Long>();
+
+    private static final Map<UUID, Long> spammersMap = new HashMap<>();
     private static AntiSpamManager asm;
 
     private AntiSpamManager() {
@@ -25,16 +25,12 @@ public class AntiSpamManager {
         return spammersMap;
     }
 
-    public void addPossibleSpammer(Player p) { //5s cooldown on the commands
+    public void addPossibleSpammer(Player p) { //5s cool-down on the commands
         getSpammersMap().put(p.getUniqueId(), System.currentTimeMillis() + 5000);
     }
 
     public boolean playerIsSpamming(Player p) {
         return getSpammersMap().containsKey(p.getUniqueId()) && getSpammersMap().get(p.getUniqueId()) >= System.currentTimeMillis();
-    }
-
-    public void removeSpammer(Player p) {
-        getSpammersMap().remove(p.getUniqueId());
     }
 
     public void sendSpamWarning(Player p) {

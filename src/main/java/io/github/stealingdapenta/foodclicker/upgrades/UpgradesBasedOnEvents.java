@@ -1,15 +1,5 @@
 package io.github.stealingdapenta.foodclicker.upgrades;
 
-import io.github.stealingdapenta.foodclicker.basics.Buildings;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerData;
-import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import org.bukkit.Material;
-
-import java.math.BigDecimal;
-import java.math.MathContext;
-import java.util.Random;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -23,6 +13,16 @@ import static io.github.stealingdapenta.foodclicker.basics.Buildings.MOM;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.POPUP;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.RESTAURANT;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.EVENTDURATION;
+
+import io.github.stealingdapenta.foodclicker.basics.Buildings;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerData;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import java.math.BigDecimal;
+import java.math.MathContext;
+import java.util.Random;
+import lombok.Getter;
+import org.bukkit.Material;
 
 public enum UpgradesBasedOnEvents {
 
@@ -86,11 +86,16 @@ public enum UpgradesBasedOnEvents {
     PARALYSE("Cold Fingers", Material.APPLE, "Click Multiplier", 0.1, 14),
     ;
 
+    @Getter
     private final double multiplierIncrease;
+    @Getter
     private final String affectingKey;
     private final int boostDuration;
+    @Getter
     private final Buildings buildings;
+    @Getter
     private final String name;
+    @Getter
     private final Material material;
     private final Random r = new Random();
 
@@ -130,28 +135,8 @@ public enum UpgradesBasedOnEvents {
         this.material = material;
     }
 
-    public String getName() {
-        return name;
-    }
-
-    public Material getMaterial() {
-        return material;
-    }
-
-    public Buildings getBuildings() {
-        return buildings;
-    }
-
     public int getBoostDuration(ClickingPlayer cp) {
         return boostDuration * (1 + (int) EVENTDURATION.getCurrentBonus(cp));
-    }
-
-    public String getAffectingKey() {
-        return affectingKey;
-    }
-
-    public double getMultiplierIncrease() {
-        return multiplierIncrease;
     }
 
     public void doEffects(ClickingPlayer cp) {
@@ -165,24 +150,34 @@ public enum UpgradesBasedOnEvents {
         }
         Buildings b = getBuildings();
         if (b != null) {
-            cpd.getBuildingsBaseMultipliers().put(b, cpd.getSpecificBuildingsBaseMultiplier(b) * getMultiplierIncrease());
+            cpd.getBuildingsBaseMultipliers()
+               .put(b, cpd.getSpecificBuildingsBaseMultiplier(b) * getMultiplierIncrease());
 
             if (getMultiplierIncrease() > 1) {
                 cp.doMessage("Your &b" + b.getName() + "s &eare boosted by &b" + getMultiplierIncrease() + "x &efor &b" + getBoostDuration(cp) + " &eseconds!");
             } else {
-                cp.doMessage("&cA disgrace! Your &b" + b.getName() + "s &care slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease())) + "% &cfor &b" + getBoostDuration(cp) + " " +
-                                     "&cseconds!");
+                cp.doMessage(
+                        "&cA disgrace! Your &b" + b.getName() + "s &care slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease())) + "% &cfor &b"
+                                + getBoostDuration(cp) + " " + "&cseconds!");
             }
         } else {
-            if (cpd.getGeneralDoubleStats().containsKey(getAffectingKey())) {
-                cpd.getGeneralDoubleStats().put(getAffectingKey(), cpd.getGeneralDoubleStats().get(getAffectingKey()) * getMultiplierIncrease());
-            } else if (cpd.getGeneralBigDecimals().containsKey(getAffectingKey())) {
-                BigDecimal newValue = cpd.getGeneralBigDecimals().get(getAffectingKey()).multiply(BigDecimal.valueOf(getMultiplierIncrease()));
+            if (cpd.getGeneralDoubleStats()
+                   .containsKey(getAffectingKey())) {
+                cpd.getGeneralDoubleStats()
+                   .put(getAffectingKey(), cpd.getGeneralDoubleStats()
+                                              .get(getAffectingKey()) * getMultiplierIncrease());
+            } else if (cpd.getGeneralBigDecimals()
+                          .containsKey(getAffectingKey())) {
+                BigDecimal newValue = cpd.getGeneralBigDecimals()
+                                         .get(getAffectingKey())
+                                         .multiply(BigDecimal.valueOf(getMultiplierIncrease()));
                 if (getAffectingKey().equals("money") && getMultiplierIncrease() > 1) {
-                    BigDecimal increment = newValue.subtract(cpd.getGeneralBigDecimals().get(getAffectingKey()));
+                    BigDecimal increment = newValue.subtract(cpd.getGeneralBigDecimals()
+                                                                .get(getAffectingKey()));
                     cp.earn(increment);
                 } else {
-                    cpd.getGeneralBigDecimals().put(getAffectingKey(), newValue);
+                    cpd.getGeneralBigDecimals()
+                       .put(getAffectingKey(), newValue);
                 }
             } else {
                 System.out.println("FoodClicker: Error in Upgrades Based On Events!");
@@ -200,9 +195,11 @@ public enum UpgradesBasedOnEvents {
                 }
             } else {
                 if (getMultiplierIncrease() > 1) {
-                    cp.doMessage("Your &b" + getAffectingKey() + " &eis boosted by &b" + getMultiplierIncrease() + "x &efor &b" + getBoostDuration(cp) + " &eseconds!");
+                    cp.doMessage("Your &b" + getAffectingKey() + " &eis boosted by &b" + getMultiplierIncrease() + "x &efor &b" + getBoostDuration(cp)
+                                         + " &eseconds!");
                 } else {
-                    cp.doMessage("&cA disgrace! Your &b" + getAffectingKey() + " &cis slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease())) + "% &cfor &b" + getBoostDuration(cp) + " &cseconds!");
+                    cp.doMessage("&cA disgrace! Your &b" + getAffectingKey() + " &cis slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease()))
+                                         + "% &cfor &b" + getBoostDuration(cp) + " &cseconds!");
                 }
             }
         }
@@ -212,14 +209,29 @@ public enum UpgradesBasedOnEvents {
     public void undoEffects(ClickingPlayer cp) {
         Buildings b = getBuildings();
         if (b != null) {
-            cp.getData().getBuildingsBaseMultipliers().put(b, cp.getData().getSpecificBuildingsBaseMultiplier(b) / getMultiplierIncrease());
+            cp.getData()
+              .getBuildingsBaseMultipliers()
+              .put(b, cp.getData()
+                        .getSpecificBuildingsBaseMultiplier(b) / getMultiplierIncrease());
         } else {
-            if (cp.getData().getGeneralDoubleStats().containsKey(getAffectingKey())) {
-                cp.getData().getGeneralDoubleStats().put(getAffectingKey(), cp.getData().getGeneralDoubleStats().get(getAffectingKey()) / getMultiplierIncrease());
-            } else if (cp.getData().getGeneralBigDecimals().containsKey(getAffectingKey())) {
-                BigDecimal newValue = cp.getData().getGeneralBigDecimals().get(getAffectingKey())
+            if (cp.getData()
+                  .getGeneralDoubleStats()
+                  .containsKey(getAffectingKey())) {
+                cp.getData()
+                  .getGeneralDoubleStats()
+                  .put(getAffectingKey(), cp.getData()
+                                            .getGeneralDoubleStats()
+                                            .get(getAffectingKey()) / getMultiplierIncrease());
+            } else if (cp.getData()
+                         .getGeneralBigDecimals()
+                         .containsKey(getAffectingKey())) {
+                BigDecimal newValue = cp.getData()
+                                        .getGeneralBigDecimals()
+                                        .get(getAffectingKey())
                                         .divide(BigDecimal.valueOf(getMultiplierIncrease()), new MathContext(5));
-                cp.getData().getGeneralBigDecimals().put(getAffectingKey(), newValue);
+                cp.getData()
+                  .getGeneralBigDecimals()
+                  .put(getAffectingKey(), newValue);
             } else {
                 System.out.println("FoodClicker: Error in Upgrades Based On Events!");
             }

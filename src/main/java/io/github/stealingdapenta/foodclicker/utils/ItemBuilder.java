@@ -1,17 +1,14 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
+import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.List;
 import org.bukkit.ChatColor;
 import org.bukkit.Material;
 import org.bukkit.enchantments.Enchantment;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.ItemMeta;
-
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.List;
-import java.util.Map;
-import java.util.function.Consumer;
 
 public class ItemBuilder {
 
@@ -38,12 +35,8 @@ public class ItemBuilder {
 
     public ItemBuilder setDisplayName(String name) {
         meta = meta == null ? stack.getItemMeta() : meta;
+        assert meta != null;
         meta.setDisplayName(color(name));
-        return this;
-    }
-
-    public ItemBuilder modifyMeta(Consumer<ItemMeta> consumer) {
-        consumer.accept(meta);
         return this;
     }
 
@@ -65,39 +58,22 @@ public class ItemBuilder {
         return this;
     }
 
-    public ItemBuilder removeAllLore() {
-        meta = meta == null ? stack.getItemMeta() : meta;
-        meta.setLore(loreList);
-        return this;
-    }
-
     public ItemBuilder addItemFlags(ItemFlag... itemFlags) {
         meta = meta == null ? stack.getItemMeta() : meta;
+        assert meta != null;
         meta.addItemFlags(itemFlags);
 
         return this;
     }
 
-    public ItemBuilder setEnchantments(Map<Enchantment, Integer> enchants) {
-        enchants.forEach(stack::addUnsafeEnchantment);
-        return this;
-    }
-
-    public ItemBuilder addEnchantment(Enchantment enchantment, Integer level) {
-        meta.addEnchant(enchantment, level, true);
-        return this;
-    }
-
     public ItemBuilder setGlowing(boolean glow) {
-        if (!glow) return this;
+        if (!glow) {
+            return this;
+        }
         meta = meta == null ? stack.getItemMeta() : meta;
+        assert meta != null;
         meta.addEnchant(Enchantment.LURE, 1, true);
         meta.addItemFlags(ItemFlag.HIDE_ENCHANTS);
-        return this;
-    }
-
-    public ItemBuilder setGlowing() {
-        setGlowing(true);
         return this;
     }
 

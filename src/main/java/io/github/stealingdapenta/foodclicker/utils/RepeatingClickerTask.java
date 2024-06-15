@@ -5,13 +5,15 @@ import org.bukkit.plugin.java.JavaPlugin;
 
 public abstract class RepeatingClickerTask implements Runnable {
 
-    private int taskID;
+    private final int taskID;
 
     public RepeatingClickerTask(JavaPlugin plugin, long delay, long period) {
-        taskID = Bukkit.getScheduler().scheduleSyncRepeatingTask(plugin, this, delay, period);
+        taskID = Bukkit.getScheduler()
+                       .scheduleSyncRepeatingTask(plugin, this, delay, period);
     }
 
     public void cancel() {
-        Bukkit.getScheduler().cancelTask(taskID);
+        Bukkit.getScheduler()
+              .cancelTask(taskID);
     }
 }

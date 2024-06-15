@@ -10,12 +10,13 @@ import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.entity.Player;
+import org.jetbrains.annotations.NotNull;
 
 public class FoodClickerCommand implements CommandExecutor {
     private final InventoryManager im = InventoryManager.getInstance();
     private final AntiSpamManager asm = AntiSpamManager.getInstance();
 
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (sender instanceof ConsoleCommandSender) return true;
 
         Player p = (Player) sender;
@@ -39,11 +40,9 @@ public class FoodClickerCommand implements CommandExecutor {
 
             im.addClickingPlayerToMap(cp);
             p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait &a2s &ewhile we load your data."));
-            Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
-                cp.getGui().setGameState(0);
-
-
-            }, 40L);
+            Bukkit.getScheduler()
+                  .runTaskLater(FoodClicker.getInstance(), () -> cp.getGui()
+                                                                   .setGameState(0), 40L);
         }
         return true;
     }

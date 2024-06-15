@@ -1,6 +1,9 @@
 package io.github.stealingdapenta.foodclicker.commands;
 
+import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
+
 import io.github.stealingdapenta.foodclicker.FoodClicker;
+import java.util.Random;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -12,14 +15,11 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.FireworkMeta;
-
-import java.util.Random;
-
-import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
+import org.jetbrains.annotations.NotNull;
 
 public class FireworkCommand implements CommandExecutor {
 
-    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
+    public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
         if (!sender.hasPermission("foodclicker.firework")) {
             sender.sendMessage(colorStatic("&6[&bFoodClicker&6] &eYou're not permitted to use this command."));
             return true;
@@ -53,32 +53,44 @@ public class FireworkCommand implements CommandExecutor {
             return true;
         }
 
-
         doFireWorks(target, amount, size);
-        sender.sendMessage(colorStatic("&6[&bFoodClicker&6] &eSpawned &b" + amount + "&e fireworks at &b" + target.getName() + " &ewith size &b" + size + "&e."));
+        sender.sendMessage(
+                colorStatic("&6[&bFoodClicker&6] &eSpawned &b" + amount + "&e fireworks at &b" + target.getName() + " &ewith size &b" + size + "&e."));
 
         return true;
     }
 
     private void doFireWorks(Player target, int amount, int size) {
         Location loc = target.getLocation();
-        if (loc.getWorld() == null) return;
+        if (loc.getWorld() == null) {
+            return;
+        }
         Random r = new Random();
-        Firework fw = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK);
+        Firework fw = (Firework) loc.getWorld()
+                                    .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
         FireworkMeta fwm = fw.getFireworkMeta();
 
         fwm.setPower(size);
-        fwm.addEffect(FireworkEffect.builder().withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))).flicker(true).build());
+        fwm.addEffect(FireworkEffect.builder()
+                                    .withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
+                                    .flicker(true)
+                                    .build());
         fw.remove();
 
         for (int i = 0; i < amount; i++) {
-            Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
-                fwm.clearEffects();
-                fwm.addEffect(FireworkEffect.builder().withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))).flicker(true).trail(true).build());
+            Bukkit.getScheduler()
+                  .runTaskLater(FoodClicker.getInstance(), () -> {
+                      fwm.clearEffects();
+                      fwm.addEffect(FireworkEffect.builder()
+                                                  .withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
+                                                  .flicker(true)
+                                                  .trail(true)
+                                                  .build());
 
-                Firework fw2 = (Firework) loc.getWorld().spawnEntity(loc, EntityType.FIREWORK);
-                fw2.setFireworkMeta(fwm);
-            }, (1L + i * 4));
+                      Firework fw2 = (Firework) loc.getWorld()
+                                                   .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
+                      fw2.setFireworkMeta(fwm);
+                  }, (1L + i * 4L));
         }
     }
 

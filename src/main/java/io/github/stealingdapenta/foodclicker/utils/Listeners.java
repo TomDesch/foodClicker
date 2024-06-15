@@ -1,22 +1,5 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
-import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
-import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
-import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
-import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
-import org.bukkit.Material;
-import org.bukkit.entity.Player;
-import org.bukkit.event.EventHandler;
-import org.bukkit.event.Listener;
-import org.bukkit.event.inventory.ClickType;
-import org.bukkit.event.inventory.InventoryClickEvent;
-import org.bukkit.event.inventory.InventoryType;
-import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
-import org.bukkit.event.player.PlayerQuitEvent;
-import org.bukkit.inventory.InventoryView;
-
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CAFETERIA;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHAIN;
 import static io.github.stealingdapenta.foodclicker.basics.Buildings.CHEF;
@@ -50,40 +33,34 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTW
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTWITHMOMS;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STONKS;
 
+import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
+import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
+import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
+import org.bukkit.Material;
+import org.bukkit.entity.Player;
+import org.bukkit.event.EventHandler;
+import org.bukkit.event.Listener;
+import org.bukkit.event.inventory.ClickType;
+import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryType;
+import org.bukkit.event.player.PlayerJoinEvent;
+import org.bukkit.event.player.PlayerKickEvent;
+import org.bukkit.event.player.PlayerQuitEvent;
+import org.bukkit.inventory.InventoryView;
+
 public class Listeners implements Listener {
-    private static final String gameGuiTitleAddendum = "'s Factory";
-    private static final String shopGuiTitleAddendum = "'s Shop";
-    private static final String preferencesGuiTitleAddendum = "'s Preferences";
-    private static final String achievementsGuiTitleAddendum = "'s Achievements";
-    private static final String upgradesGuiTitleAddendum = "'s Upgrades Shop";
-    private static final String prestigeShop = "'s Prestige Shop";
+
+    public static final String GAME_GUI_TITLE_ADDENDUM = "'s Factory";
+    public static final String SHOP_GUI_TITLE_ADDENDUM = "'s Shop";
+    public static final String PREFERENCES_GUI_TITLE_ADDENDUM = "'s Preferences";
+    public static final String ACHIEVEMENTS_GUI_TITLE_ADDENDUM = "'s Achievements";
+    public static final String UPGRADES_GUI_TITLE_ADDENDUM = "'s Upgrades Shop";
+    public static final String PRESTIGE_SHOP = "'s Prestige Shop";
 
     private final InventoryManager im = InventoryManager.getInstance();
     private final FileManager fm = FileManager.getInstance();
-
-    public static String getPrestigeShop() {
-        return prestigeShop;
-    }
-
-    public static String getUpgradesGuiTitleAddendum() {
-        return upgradesGuiTitleAddendum;
-    }
-
-    public static String getGameGuiTitleAddendum() {
-        return gameGuiTitleAddendum;
-    }
-
-    public static String getShopGuiTitleAddendum() {
-        return shopGuiTitleAddendum;
-    }
-
-    public static String getPreferencesGuiTitleAddendum() {
-        return preferencesGuiTitleAddendum;
-    }
-
-    public static String getAchievementsGuiTitleAddendum() {
-        return achievementsGuiTitleAddendum;
-    }
 
     private static String possibleTitle(Player p, String addendum) {
         return p.getDisplayName() + addendum;
@@ -154,7 +131,6 @@ public class Listeners implements Listener {
         Player p = e.getPlayer();
         saveLogOutDate(p, System.currentTimeMillis() / 1000);
 
-
         long time = loadGameCloseDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadGameCloseDate(p);
 
         saveGameCloseTime(p, loadGameCloseTime(p) + time);
@@ -177,10 +153,13 @@ public class Listeners implements Listener {
         int slot = e.getRawSlot();
         ClickType ct = e.getClick();
 
-        if (!im.inventoryIsFoodClicker(inv.getTitle(), p)) return;
+        if (!im.inventoryIsFoodClicker(inv.getTitle(), p)) {
+            return;
+        }
         e.setCancelled(true);
 
-        ClickingPlayer cp = im.getClickingPlayerMap().get(p);
+        ClickingPlayer cp = im.getClickingPlayerMap()
+                              .get(p);
         if (cp == null) {
             im.closeGUI(p);
             cp = new ClickingPlayer(p);
@@ -189,15 +168,20 @@ public class Listeners implements Listener {
         }
 
         possiblyUnlockClickTypeAchievements(ct, cp);
-        if (e.getSlotType().equals(InventoryType.SlotType.OUTSIDE)) {
+        if (e.getSlotType()
+             .equals(InventoryType.SlotType.OUTSIDE)) {
             cp.unlockAchievement(AchievementsEnum.OUTSIDER);
         }
 
         if (e.getClickedInventory() != null) {
-            if (e.getClickedInventory().equals(e.getView().getBottomInventory())) {
+            if (e.getClickedInventory()
+                 .equals(e.getView()
+                          .getBottomInventory())) {
                 cp.unlockAchievement(AchievementsEnum.INSIDER);
                 if (e.getCurrentItem() != null) {
-                    if (e.getCurrentItem().getType().equals(Material.COOKIE)) {
+                    if (e.getCurrentItem()
+                         .getType()
+                         .equals(Material.COOKIE)) {
                         cp.unlockAchievement(AchievementsEnum.ORTEIL);
                     }
                 }
@@ -207,21 +191,28 @@ public class Listeners implements Listener {
         if (slot == 16) {
             cp.unlockAchievement(AchievementsEnum.HEADCASE);
             if (PRESTIGESTATS.getAmountOwned(cp) > 0) {
-                cp.getData().doPrestigeHead();
+                cp.getData()
+                  .doPrestigeHead();
             }
         }
 
-        if (inv.getTitle().equals(possibleTitle(p, getGameGuiTitleAddendum()))) {
+        if (inv.getTitle()
+               .equals(possibleTitle(p, GAME_GUI_TITLE_ADDENDUM))) {
             doMainGameInteractions(slot, cp);
-        } else if (inv.getTitle().equals(possibleTitle(p, getShopGuiTitleAddendum()))) {
+        } else if (inv.getTitle()
+                      .equals(possibleTitle(p, SHOP_GUI_TITLE_ADDENDUM))) {
             doStoreInteractions(slot, cp, inv);
-        } else if (inv.getTitle().equals(possibleTitle(p, getAchievementsGuiTitleAddendum()))) {
+        } else if (inv.getTitle()
+                      .equals(possibleTitle(p, ACHIEVEMENTS_GUI_TITLE_ADDENDUM))) {
             doAchievementInteractions(slot, cp);
-        } else if (inv.getTitle().equals(possibleTitle(p, getUpgradesGuiTitleAddendum()))) {
+        } else if (inv.getTitle()
+                      .equals(possibleTitle(p, UPGRADES_GUI_TITLE_ADDENDUM))) {
             doUpgradesInteractions(slot, cp, inv);
-        } else if (inv.getTitle().equals(possibleTitle(p, getPreferencesGuiTitleAddendum()))) {
+        } else if (inv.getTitle()
+                      .equals(possibleTitle(p, PREFERENCES_GUI_TITLE_ADDENDUM))) {
             doPreferencesInteractions(slot, cp);
-        } else if (inv.getTitle().equals(possibleTitle(p, getPrestigeShop()))) {
+        } else if (inv.getTitle()
+                      .equals(possibleTitle(p, PRESTIGE_SHOP))) {
             doPrestigeShopInteractions(slot, cp);
         }
     }
@@ -233,15 +224,18 @@ public class Listeners implements Listener {
                 break;
             case 25: // settings button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(4);
+                cp.getGui()
+                  .setGameState(4);
                 break;
             case 34: // shop button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(1);
+                cp.getGui()
+                  .setGameState(1);
                 break;
             case 43: // achievements gui
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(2);
+                cp.getGui()
+                  .setGameState(2);
                 break;
             default:
                 if (cp.clickedSlotIsEventClickable(clickedSlot)) {
@@ -292,16 +286,18 @@ public class Listeners implements Listener {
 
             case 25: // Upgrades GUI button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(3);
+                cp.getGui()
+                  .setGameState(3);
                 break;
-            case 34: //button buymode flick
+            case 34: //button buy mode flick
                 cp.doSoundEffect(10);
                 cp.flickBuyMode();
                 cp.updateBuymodeButton(inv.getTopInventory());
                 break;
             case 43: // main menu
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(0);
+                cp.getGui()
+                  .setGameState(0);
             default:
                 break;
         }
@@ -311,20 +307,25 @@ public class Listeners implements Listener {
         switch (clickedSlot) {
             case 25: // main menu button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(0);
+                cp.getGui()
+                  .setGameState(0);
                 break;
             case 34: // prestige shop
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(5);
+                cp.getGui()
+                  .setGameState(5);
                 break;
             case 43: // return to shop
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(1);
+                cp.getGui()
+                  .setGameState(1);
                 break;
             default:
                 //todo extend with upgrades based on achievements
                 Object u = cp.getUpgradeRelatedToItem(inv.getItem(clickedSlot));
-                if (u == null) return;
+                if (u == null) {
+                    return;
+                }
 
                 if (u instanceof UpgradesBasedOnBuildings) {
                     ((UpgradesBasedOnBuildings) u).possiblyBuyUpgrade(cp, inv.getTopInventory(), clickedSlot);
@@ -343,36 +344,43 @@ public class Listeners implements Listener {
             case 10:
                 cp.doSoundEffect(10);
                 settings.flickInventoryDarkMode();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 11:
                 cp.doSoundEffect(10);
                 settings.flickLoreDarkMode();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 12:
                 cp.doSoundEffect(10);
                 settings.flickDoChatMessages();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 13:
                 cp.doSoundEffect(10);
                 settings.flickDoSoundEffects();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 14:
                 cp.doSoundEffect(10);
                 settings.flickDoFirework();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 19:
                 cp.doSoundEffect(10);
                 settings.flickDoBigNumbers();
-                cp.getGui().setGameState(4); // refresh settings window
+                cp.getGui()
+                  .setGameState(4); // refresh settings window
                 break;
             case 25: // main menu button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(0);
+                cp.getGui()
+                  .setGameState(0);
                 break;
             default:
                 break;
@@ -383,18 +391,22 @@ public class Listeners implements Listener {
         switch (clickedSlot) {
             case 25: // main menu button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(0);
+                cp.getGui()
+                  .setGameState(0);
                 break;
             case 34: // next page
                 cp.doSoundEffect(10);
-                cp.getGui().openNextAchievementsPage();
+                cp.getGui()
+                  .openNextAchievementsPage();
                 break;
             case 43: // previous page
                 cp.doSoundEffect(10);
-                cp.getGui().openPreviousAchievementsPage();
+                cp.getGui()
+                  .openPreviousAchievementsPage();
                 break;
             default:
-                if (clickedSlot == 28 && cp.getGui().getAchievementsPageNumber() == 1) {
+                if (clickedSlot == 28 && cp.getGui()
+                                           .getAchievementsPageNumber() == 1) {
                     cp.unlockAchievement(AchievementsEnum.WELCOME);
                 }
                 break;
@@ -471,16 +483,21 @@ public class Listeners implements Listener {
 
             case 25: // main menu button
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(0);
+                cp.getGui()
+                  .setGameState(0);
                 break;
             case 34: // prestige
-                if (cp.getData().canPrestige()) {
+                if (cp.getData()
+                      .canPrestige()) {
                     cp.doSoundEffect(3);
                     cp.doFireWorks(5, 1);
-                    cp.doMessage("Congratulations! You've earned &b" + cp.getData().calculateAvailablePrestigeLevels() + " Prestige Coins&e!");
+                    cp.doMessage("Congratulations! You've earned &b" + cp.getData()
+                                                                         .calculateAvailablePrestigeLevels() + " Prestige Coins&e!");
 
-                    cp.getData().doPrestige();
-                    cp.getGui().setGameState(0);
+                    cp.getData()
+                      .doPrestige();
+                    cp.getGui()
+                      .setGameState(0);
                 } else {
                     cp.doMessage("You can't afford Prestige yet.");
                     cp.doSoundEffect(0);
@@ -488,7 +505,8 @@ public class Listeners implements Listener {
                 break;
             case 43: // return to Upgrades shop
                 cp.doSoundEffect(10);
-                cp.getGui().setGameState(3);
+                cp.getGui()
+                  .setGameState(3);
                 break;
             default:
                 break;
