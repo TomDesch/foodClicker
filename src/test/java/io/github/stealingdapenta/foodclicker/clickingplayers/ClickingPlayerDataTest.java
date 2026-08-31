@@ -1,6 +1,7 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 import static org.mockito.ArgumentMatchers.anyString;
 import static org.mockito.ArgumentMatchers.same;
 import static org.mockito.Mockito.clearInvocations;
@@ -60,12 +61,14 @@ class ClickingPlayerDataTest {
     void loadsAllPlayerDataFromOneConfigurationSnapshot() {
         YamlConfiguration config = new YamlConfiguration();
         ClickingPlayerSettings settings = org.mockito.Mockito.mock(ClickingPlayerSettings.class);
+        config.set("doBigNumbers", true);
         when(fileManager.getConfig(clickingPlayer)).thenReturn(config);
         when(clickingPlayer.getSettings()).thenReturn(settings);
 
         data.loadEverythingFromFile();
 
         verify(fileManager).getConfig(clickingPlayer);
+        verify(settings).setDoBigNumbers(true);
     }
 
     @Test
@@ -74,6 +77,7 @@ class ClickingPlayerDataTest {
         ClickingPlayerSettings settings = org.mockito.Mockito.mock(ClickingPlayerSettings.class);
         when(fileManager.getConfig(clickingPlayer)).thenReturn(config);
         when(clickingPlayer.getSettings()).thenReturn(settings);
+        when(settings.isDoBigNumbers()).thenReturn(true);
         when(fileManager.getBigDecimalByKey(same(config), anyString())).thenReturn(BigDecimal.ZERO);
         data.loadEverythingFromFile();
         clearInvocations(fileManager);
@@ -82,5 +86,6 @@ class ClickingPlayerDataTest {
 
         verify(fileManager).getConfig(clickingPlayer);
         verify(fileManager).saveConfig(clickingPlayer, config);
+        assertTrue(config.getBoolean("doBigNumbers"));
     }
 }
