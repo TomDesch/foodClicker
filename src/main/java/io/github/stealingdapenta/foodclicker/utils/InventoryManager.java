@@ -236,9 +236,9 @@ public class InventoryManager {
             return (makeNumbersPretty(calculateFraction(number, septendecillion)) + " Septendecillion");
         } else if (isBetween(number, octodecillion, novemdecillion)) {
             return (makeNumbersPretty(calculateFraction(number, octodecillion)) + " Octodecillion");
-        } else if (number.compareTo(novemdecillion) > 0) {
+        } else if (isBetween(number, novemdecillion, vigintillion)) {
             return (makeNumbersPretty(calculateFraction(number, novemdecillion)) + " Novemdecillion");
-        } else if (number.compareTo(vigintillion) > 0) {
+        } else if (number.compareTo(vigintillion) >= 0) {
             return (makeNumbersPretty(calculateFraction(number, vigintillion)) + " Vigintillion");
         }
 
