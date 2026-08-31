@@ -58,7 +58,6 @@ import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
 
 public class ClickingPlayer {
-
     private static final InventoryManager im = InventoryManager.getInstance();
     private static final Random r = new Random();
     private final InitializationGate initializationGate = new InitializationGate();
@@ -125,13 +124,11 @@ public class ClickingPlayer {
     }
 
     private void doAllCalculationsAsync() {
-        Bukkit.getScheduler()
-              .runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-                  getData().loadEverythingFromFile();
-                  incomePerSecond = calculateTotalIncomePerSecond();
-                  Bukkit.getScheduler()
-                        .runTask(FoodClicker.getInstance(), this::finishInitialization);
-              });
+        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
+            getData().loadEverythingFromFile();
+            incomePerSecond = calculateTotalIncomePerSecond();
+            Bukkit.getScheduler().runTask(FoodClicker.getInstance(), this::finishInitialization);
+        });
     }
 
     private void finishInitialization() {
@@ -171,14 +168,11 @@ public class ClickingPlayer {
     }
 
     public void addActiveEvent(Clickable c) {
-        this.getActiveEvents()
-            .add(c);
+        this.getActiveEvents().add(c);
     }
 
     private void doSecondFromDurationFromAllActiveEvents() {
-        if (getActiveEvents() == null) {
-            return;
-        }
+        if (getActiveEvents() == null) return;
         if (getActiveEvents().isEmpty()) {
             return;
         }
@@ -192,16 +186,12 @@ public class ClickingPlayer {
     public void doClick() {
         doSoundEffect(-1);
 
-        double amount = 1D * getData().getGeneralDoubleStats()
-                                      .get("Click Multiplier") * (1 + PERMANENTCLICKMULTIPLIER.getCurrentBonus(this) / 100);
+        double amount = 1D * getData().getGeneralDoubleStats().get("Click Multiplier") * (1 + PERMANENTCLICKMULTIPLIER.getCurrentBonus(this) / 100);
         getData().addOneClick();
         earn(amount);
-        getData().getGeneralDoubleStats()
-                 .put("earnedByClicking", getData().getGeneralDoubleStats()
-                                                   .get("earnedByClicking") + amount);
+        getData().getGeneralDoubleStats().put("earnedByClicking", getData().getGeneralDoubleStats().get("earnedByClicking") + amount);
 
-        possiblyUnlockAutoClickerAchievement(getData().getGeneralIntegerStats()
-                                                      .get("cookie"));
+        possiblyUnlockAutoClickerAchievement(getData().getGeneralIntegerStats().get("cookie"));
     }
 
     private void possiblyUnlockAutoClickerAchievement(int timesClicked) {
@@ -241,51 +231,38 @@ public class ClickingPlayer {
     }
 
     private void setEventItem(Clickable c) {
-        c.getInv()
-         .setItem(c.getSlotPosition(), c.getItemStack());
+        c.getInv().setItem(c.getSlotPosition(), c.getItemStack());
     }
 
     private void resetPaneItem(Clickable c) {
-        c.getInv()
-         .setItem(c.getSlotPosition(), c.getReplacedItem());
+        c.getInv().setItem(c.getSlotPosition(), c.getReplacedItem());
     }
 
     public boolean clickedSlotIsEventClickable(int clickedSlot) {
-        if (noActiveEvents()) {
-            return false;
-        }
-        return (getActiveEvents().stream()
-                                 .anyMatch(s -> s.getSlotPosition() == clickedSlot));
+        if (noActiveEvents()) return false;
+        return (getActiveEvents().stream().anyMatch(s -> s.getSlotPosition() == clickedSlot));
     }
 
     public Clickable getEventBasedOnSlot(int clickedSlot) {
-        return getActiveEvents().stream()
-                                .filter(s -> s.getSlotPosition() == clickedSlot)
-                                .findFirst()
-                                .orElse(null);
+        return getActiveEvents().stream().filter(s -> s.getSlotPosition() == clickedSlot).findFirst().orElse(null);
     }
 
     public void eventGotClicked(Clickable c) {
         getData().addOneClickableClicked();
         getActiveEvents().remove(c);
         resetPaneItem(c);
-        c.getBonus()
-         .doEffects(this);
+        c.getBonus().doEffects(this);
 
-        if (c.getBonus()
-             .getBoostDuration(this) != -1) {
+        if (c.getBonus().getBoostDuration(this) != -1) {
             // perma upgrades don't need to be terminated
             getActiveBoosts().add(c);
             autoTerminateUpgrades(c);
         }
-        if (getGui().getGameState() == 1 && c.getBonus()
-                                             .getBuildings() != null) {
-            updateBuildingInGUI(getGui().getGameWindow(), c.getBonus()
-                                                           .getBuildings()); // refresh if in shop menu
+        if (getGui().getGameState() == 1 && c.getBonus().getBuildings() != null) {
+            updateBuildingInGUI(getGui().getGameWindow(), c.getBonus().getBuildings()); // refresh if in shop menu
         }
 
-        unlockBonusCollectorAchievement(getData().getGeneralIntegerStats()
-                                                 .get("clickablesClicked"));
+        unlockBonusCollectorAchievement(getData().getGeneralIntegerStats().get("clickablesClicked"));
     }
 
     private void unlockBonusCollectorAchievement(int eventsClicked) {
@@ -319,18 +296,15 @@ public class ClickingPlayer {
     }
 
     public void instantlyTerminateUpgrade(Clickable c) {
-        c.getBonus()
-         .undoEffects(this);
+        c.getBonus().undoEffects(this);
     }
 
     public void possiblyTerminate() {
         if (areBoostsActive()) {
             for (Clickable c : getActiveBoosts()) {
                 instantlyTerminateUpgrade(c);
-                if (getGui().getGameState() == 1 && c.getBonus()
-                                                     .getBuildings() != null) {
-                    updateBuildingInGUI(getGui().getGameWindow(), c.getBonus()
-                                                                   .getBuildings()); // refresh if in shop menu
+                if (getGui().getGameState() == 1 && c.getBonus().getBuildings() != null) {
+                    updateBuildingInGUI(getGui().getGameWindow(), c.getBonus().getBuildings()); // refresh if in shop menu
                 }
             }
         }
@@ -339,20 +313,13 @@ public class ClickingPlayer {
     public void autoTerminateUpgrades(Clickable c) {
         ClickingPlayer cp = this;
 
-        Bukkit.getScheduler()
-              .runTaskLater(FoodClicker.getInstance(), () -> {
-                  c.getBonus()
-                   .undoEffects(cp);
-                  getActiveBoosts().remove(c);
-                  if (cp.getGui()
-                        .getGameState() == 1 && c.getBonus()
-                                                 .getBuildings() != null) {
-                      cp.updateBuildingInGUI(cp.getGui()
-                                               .getGameWindow(), c.getBonus()
-                                                                  .getBuildings()); // refresh if in shop menu
-                  }
-              }, (c.getBonus()
-                   .getBoostDuration(this) * 20L));
+        Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
+            c.getBonus().undoEffects(cp);
+            getActiveBoosts().remove(c);
+            if (cp.getGui().getGameState() == 1 && c.getBonus().getBuildings() != null) {
+                cp.updateBuildingInGUI(cp.getGui().getGameWindow(), c.getBonus().getBuildings()); // refresh if in shop menu
+            }
+        }, (c.getBonus().getBoostDuration(this) * 20L));
         // turns into seconds bcs bukkit asks for ticks
     }
 
@@ -367,8 +334,7 @@ public class ClickingPlayer {
     }
 
     public void possiblyDoEvent() {
-        if (shouldTriggerEvent(getData().getGeneralDoubleStats()
-                                        .get("eventChance"), r.nextDouble())) {
+        if (shouldTriggerEvent(getData().getGeneralDoubleStats().get("eventChance"), r.nextDouble())) {
             doNewEvent();
         }
     }
@@ -378,20 +344,17 @@ public class ClickingPlayer {
     }
 
     public void doNewEvent() {
-        Inventory window = this.getGui()
-                               .getGameWindow();
+        Inventory window = this.getGui().getGameWindow();
         final List<UpgradesBasedOnEvents> eventBonuses = Collections.unmodifiableList(Arrays.asList(UpgradesBasedOnEvents.values()));
 
         double eventLimit = 30 + EVENTCHANCELIMIT.getCurrentBonus(this);
-        if (getData().getGeneralDoubleStats()
-                     .get("eventChance") > eventLimit) {
-            getData().getGeneralDoubleStats()
-                     .put("eventChance", eventLimit);
+        if (getData().getGeneralDoubleStats().get("eventChance") > eventLimit) {
+            getData().getGeneralDoubleStats().put("eventChance", eventLimit);
         }
 
         List<UpgradesBasedOnEvents> eligibleEvents = eventBonuses.stream()
-                                                                 .filter(event -> eventIsEligible(event, eventLimit))
-                                                                 .toList();
+                .filter(event -> eventIsEligible(event, eventLimit))
+                .toList();
         if (eligibleEvents.isEmpty()) {
             return;
         }
@@ -404,17 +367,14 @@ public class ClickingPlayer {
     }
 
     private boolean eventIsEligible(UpgradesBasedOnEvents event, double eventLimit) {
-        if (event.getAffectingKey()
-                 .equals("eventChance") && getData().getGeneralDoubleStats()
-                                                    .get("eventChance") >= eventLimit) {
+        if (event.getAffectingKey().equals("eventChance")
+                && getData().getGeneralDoubleStats().get("eventChance") >= eventLimit) {
             return false;
         }
-        if (event.getAffectingKey()
-                 .equals("money") && event.getMultiplierIncrease() > 1D && (0.65D + STONKS.getCurrentBonus(this) / 100) * cpd.getGeneralBigDecimals()
-                                                                                                                             .get("legacy earnings")
-                                                                                                                             .doubleValue() < cpd.getGeneralBigDecimals()
-                                                                                                                                                 .get("money")
-                                                                                                                                                 .doubleValue()) {
+        if (event.getAffectingKey().equals("money") && event.getMultiplierIncrease() > 1D
+                && (0.65D + STONKS.getCurrentBonus(this) / 100)
+                * cpd.getGeneralBigDecimals().get("legacy earnings").doubleValue()
+                < cpd.getGeneralBigDecimals().get("money").doubleValue()) {
             return false;
         }
         return event.getBuildings() == null || getData().getSpecificBuildingAmount(event.getBuildings()) > 0;
@@ -436,18 +396,14 @@ public class ClickingPlayer {
                 Inventory gameWindow = view.getTopInventory();
 
                 if (im.inventoryIsFoodClicker(view.getTitle(), player)) {
-                    if (cp.getClosedDetector() > 0) {
-                        cp.resetClosedDetector();
-                    }
-                    cp.getData()
-                      .addOneSecond();
+                    if (cp.getClosedDetector() > 0) cp.resetClosedDetector();
+                    cp.getData().addOneSecond();
                     cp.doIncomePerSecond();
                     cp.updatePlayerHead(gameWindow);
                     cp.doSecondFromDurationFromAllActiveEvents();
                     cp.possiblyGetLeprechaun();
 
-                    if (cp.getGui()
-                          .getGameState() == 0) {
+                    if (cp.getGui().getGameState() == 0) {
                         cp.possiblyDoEvent();
                     }
                 } else {
@@ -455,7 +411,10 @@ public class ClickingPlayer {
                     if (cp.getClosedDetector() >= 3) {
                         System.out.println("FoodClicker: " + player.getName() + " closed FoodClicker. Task ending & saving file.");
 
-                        SessionShutdown.saveThenRemove(cp, () -> im.removePlayerFromMap(player));
+                        SessionShutdown.saveThenRemove(
+                                cp,
+                                () -> im.removePlayerFromMap(player)
+                        );
                     }
                 }
             }
@@ -487,13 +446,11 @@ public class ClickingPlayer {
     }
 
     public boolean canAfford(double amount) {
-        return hasAtLeast(getData().getGeneralBigDecimals()
-                                   .get("money"), BigDecimal.valueOf(amount));
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), BigDecimal.valueOf(amount));
     }
 
     public boolean canAfford(BigDecimal amount) {
-        return hasAtLeast(getData().getGeneralBigDecimals()
-                                   .get("money"), amount);
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), amount);
     }
 
     static boolean hasAtLeast(BigDecimal balance, BigDecimal amount) {
@@ -504,8 +461,7 @@ public class ClickingPlayer {
         inv.setItem(34, new ItemBuilder(Material.ENDER_EYE).setDisplayName("&6Buy mode")
                                                            .addLore("&e► Click to change buy mode.")
                                                            .addLore(isBuymodeAll() ? "&a○ Currently active: buy max" : "&a○ Currently active: buy x1")
-                                                           .setGlowing(true)
-                                                           .create());
+                                                           .setGlowing(true).create());
     }
 
     private void updatePlayerHead(Inventory inv) {
@@ -519,30 +475,22 @@ public class ClickingPlayer {
 
         ClickingPlayerData cpd = getData();
         if (!isPrestigeHead) {
-            return new ItemBuilder(im.getPlayerSkullItem(player)).addLore(lore1 + "This legacy playtime: " + lore3 + im.makeSecondsATimestamp(cpd.getGeneralIntegerStats()
-                                                                                                                                                 .get("Prestige Playtime")))
-                                                                 .addLore(lore1 + "Total clicks: " + lore3 + im.makeNumbersPretty(cpd.getGeneralIntegerStats()
-                                                                                                                                     .get("cookie")))
-                                                                 .addLore(lore1 + "This legacy earnings: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals()
-                                                                                                                                                .get("legacy earnings"), this))
-                                                                 .addLore(lore1 + "Earnings by clicking: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralDoubleStats()
-                                                                                                                                                .get("earnedByClicking"), this))
-                                                                 .addLore(lore1 + "Bank: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals()
-                                                                                                                                .get("money"), this))
-                                                                 .addLore(lore1 + "Income per click: " + lore2 + "£" + im.truncateNumber(getData().getGeneralDoubleStats()
-                                                                                                                                                  .get("Click Multiplier") * (1 + PERMANENTCLICKMULTIPLIER.getCurrentBonus(this) / 100), this))
-                                                                 .addLore(lore1 + "Passive income: " + lore2 + "£" + im.truncateNumber(getIncomePerSecond(), this) + lore3 + "/s")
-                                                                 .addLore(lore1 + "Buildings owned: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalBuildingsOwned()))
-                                                                 .addLore(lore1 + "Upgrades purchased: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalUpgradesOwned()))
-                                                                 .addLore(lore1 + "Achievements unlocked: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalAchievementsUnlocked()))
-                                                                 .addLore(lore1 + "Event chance: " + lore3 + im.makeNumbersPretty(cpd.getGeneralDoubleStats()
-                                                                                                                                     .get("eventChance")) + lore3 + "%")
-                                                                 .addLore(lore1 + "Bonuses collected: " + lore3 + im.makeNumbersPretty(cpd.getGeneralIntegerStats()
-                                                                                                                                          .get("clickablesClicked")))
-                                                                 .addLore(cpd.getCurrentPrestigeLevels() > 0 ? lore1 + "Prestige level: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeLevels()) : "")
-                                                                 .addLore(cpd.getCurrentPrestigeLevels() > 0 ? lore1 + "Prestige Coins: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeCoins()) : "")
-                                                                 .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
-                                                                 .create();
+            return new ItemBuilder(im.getPlayerSkullItem(player))
+                    .addLore(lore1 + "This legacy playtime: " + lore3 + im.makeSecondsATimestamp(cpd.getGeneralIntegerStats().get("Prestige Playtime")))
+                    .addLore(lore1 + "Total clicks: " + lore3 + im.makeNumbersPretty(cpd.getGeneralIntegerStats().get("cookie")))
+                    .addLore(lore1 + "This legacy earnings: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals().get("legacy earnings"), this))
+                    .addLore(lore1 + "Earnings by clicking: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralDoubleStats().get("earnedByClicking"), this))
+                    .addLore(lore1 + "Bank: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals().get("money"), this))
+                    .addLore(lore1 + "Income per click: " + lore2 + "£" + im.truncateNumber(getData().getGeneralDoubleStats().get("Click Multiplier") * (1 + PERMANENTCLICKMULTIPLIER.getCurrentBonus(this) / 100), this))
+                    .addLore(lore1 + "Passive income: " + lore2 + "£" + im.truncateNumber(getIncomePerSecond(), this) + lore3 + "/s")
+                    .addLore(lore1 + "Buildings owned: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalBuildingsOwned()))
+                    .addLore(lore1 + "Upgrades purchased: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalUpgradesOwned()))
+                    .addLore(lore1 + "Achievements unlocked: " + lore3 + im.makeNumbersPretty(cpd.calculateTotalAchievementsUnlocked()))
+                    .addLore(lore1 + "Event chance: " + lore3 + im.makeNumbersPretty(cpd.getGeneralDoubleStats().get("eventChance")) + lore3 + "%")
+                    .addLore(lore1 + "Bonuses collected: " + lore3 + im.makeNumbersPretty(cpd.getGeneralIntegerStats().get("clickablesClicked")))
+                    .addLore(cpd.getCurrentPrestigeLevels() > 0 ? lore1 + "Prestige level: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeLevels()) : "")
+                    .addLore(cpd.getCurrentPrestigeLevels() > 0 ? lore1 + "Prestige Coins: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeCoins()) : "")
+                    .addItemFlags(ItemFlag.HIDE_ATTRIBUTES).create();
         } else {
             List<String> prestigeLore = new ArrayList<>();
 
@@ -554,15 +502,13 @@ public class ClickingPlayer {
                 }
             }
 
-            return new ItemBuilder(im.getPlayerSkullItem(player)).addLore(lore1 + "Total playtime: " + lore3 + im.makeSecondsATimestamp(cpd.getGeneralIntegerStats()
-                                                                                                                                           .get("playtime")))
-                                                                 .addLore(lore1 + "All time earnings: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals()
-                                                                                                                                             .get("alltimeearnings"), this))
-                                                                 .addLore(lore1 + "Prestige level: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeLevels()))
-                                                                 .addLore(lore1 + "Prestige Coins: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeCoins()))
-                                                                 .addLore(prestigeLore)
-                                                                 .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
-                                                                 .create();
+            return new ItemBuilder(im.getPlayerSkullItem(player))
+                    .addLore(lore1 + "Total playtime: " + lore3 + im.makeSecondsATimestamp(cpd.getGeneralIntegerStats().get("playtime")))
+                    .addLore(lore1 + "All time earnings: " + lore2 + "£" + im.truncateNumber(cpd.getGeneralBigDecimals().get("alltimeearnings"), this))
+                    .addLore(lore1 + "Prestige level: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeLevels()))
+                    .addLore(lore1 + "Prestige Coins: " + lore3 + im.makeNumbersPretty(cpd.getCurrentPrestigeCoins()))
+                    .addLore(prestigeLore)
+                    .addItemFlags(ItemFlag.HIDE_ATTRIBUTES).create();
         }
     }
 
@@ -615,9 +561,20 @@ public class ClickingPlayer {
     }
 
     public double calculateTotalIncomePerSecond() {
-        return (MOM.calculateIncome(this) + CHEF.calculateIncome(this) + CAFETERIA.calculateIncome(this) + DELIVERY.calculateIncome(this) + DRIVETHROUGH.calculateIncome(this) + FOODTRUCK.calculateIncome(this) + POPUP.calculateIncome(this)
-                + RESTAURANT.calculateIncome(this) + HOTEL.calculateIncome(this) + CHAIN.calculateIncome(this) + COMPANY.calculateIncome(this) + HOUSEHOLDNAME.calculateIncome(this)) * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this)) * (1
-                + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this));
+        return (MOM.calculateIncome(this)
+                + CHEF.calculateIncome(this)
+                + CAFETERIA.calculateIncome(this)
+                + DELIVERY.calculateIncome(this)
+                + DRIVETHROUGH.calculateIncome(this)
+                + FOODTRUCK.calculateIncome(this)
+                + POPUP.calculateIncome(this)
+                + RESTAURANT.calculateIncome(this)
+                + HOTEL.calculateIncome(this)
+                + CHAIN.calculateIncome(this)
+                + COMPANY.calculateIncome(this)
+                + HOUSEHOLDNAME.calculateIncome(this))
+                * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this))
+                * (1 + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this));
     }
 
     public void flickBuyMode() {
@@ -693,9 +650,7 @@ public class ClickingPlayer {
     }
 
     public void updateUpgradesWindow(Inventory inv) {
-        if (inv.firstEmpty() == -1) {
-            return;
-        }
+        if (inv.firstEmpty() == -1) return;
 
         ArrayList<ItemStack> buyableUpgrades = getBuyableUpgrades();
         for (int i = 0; i < (Math.min(buyableUpgrades.size(), 20)); i++) { // max 20 open spots in the inv hence <20 if a lot of upgrades unlocked
@@ -712,21 +667,17 @@ public class ClickingPlayer {
     }
 
     public Object getUpgradeRelatedToItem(ItemStack item) {
-        if (!itemIsBuyableUpgrade(item)) {
-            return null;
-        }
+        if (!itemIsBuyableUpgrade(item)) return null;
         for (UpgradesBasedOnStats u : UpgradesBasedOnStats.values()) {
             if (u.requirementMetAndNotUnlocked(this)) {
-                if (u.createItem(this)
-                     .equals(item)) {
+                if (u.createItem(this).equals(item)) {
                     return u;
                 }
             }
         }
         for (UpgradesBasedOnBuildings u : UpgradesBasedOnBuildings.values()) {
             if (u.requirementMetAndNotUnlocked(this)) {
-                if (u.createItem(this)
-                     .equals(item)) {
+                if (u.createItem(this).equals(item)) {
                     return u;
                 }
             }
@@ -737,9 +688,8 @@ public class ClickingPlayer {
 
     private void possiblyUnlockBuildingAchievement(Buildings b) {
         int amount = getData().getSpecificBuildingAmount(b);
-        List<AchievementsEnum> achievementsEnums = Arrays.asList(Arrays.stream(AchievementsEnum.values())
-                                                                       .filter(a -> a.getBuilding() != null && a.getBuilding() == b)
-                                                                       .toArray(AchievementsEnum[]::new));
+        List<AchievementsEnum> achievementsEnums =
+                Arrays.asList(Arrays.stream(AchievementsEnum.values()).filter(a -> a.getBuilding() != null && a.getBuilding() == b).toArray(AchievementsEnum[]::new));
         if (!achievementsEnums.isEmpty() && amount >= 100 && amount < 500) {
             unlockAchievement(achievementsEnums.get(0));
         } else if (achievementsEnums.size() >= 2 && amount >= 500 && amount < 1000) {
@@ -800,35 +750,25 @@ public class ClickingPlayer {
     public void doFireWorks(int amount, int size) {
         if (getSettings().isDoFirework()) {
             Location loc = getPlayer().getLocation();
-            if (loc.getWorld() == null) {
-                return;
-            }
+            if (loc.getWorld() == null) return;
             Random r = new Random();
             Firework fw = (Firework) loc.getWorld()
                                         .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
             FireworkMeta fwm = fw.getFireworkMeta();
 
             fwm.setPower(size);
-            fwm.addEffect(FireworkEffect.builder()
-                                        .withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
-                                        .flicker(true)
-                                        .build());
+            fwm.addEffect(FireworkEffect.builder().withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))).flicker(true).build());
             fw.remove();
 
             for (int i = 0; i < amount; i++) {
-                Bukkit.getScheduler()
-                      .runTaskLater(FoodClicker.getInstance(), () -> {
-                          fwm.clearEffects();
-                          fwm.addEffect(FireworkEffect.builder()
-                                                      .withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255)))
-                                                      .flicker(true)
-                                                      .trail(true)
-                                                      .build());
+                Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
+                    fwm.clearEffects();
+                    fwm.addEffect(FireworkEffect.builder().withColor(Color.fromRGB(r.nextInt(255), r.nextInt(255), r.nextInt(255))).flicker(true).trail(true).build());
 
-                          Firework fw2 = (Firework) loc.getWorld()
-                                                       .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
-                          fw2.setFireworkMeta(fwm);
-                      }, (1L + i * 4L));
+                    Firework fw2 = (Firework) loc.getWorld()
+                                                 .spawnEntity(loc, EntityType.FIREWORK_ROCKET);
+                    fw2.setFireworkMeta(fwm);
+                }, (1L + i * 4L));
             }
         }
     }
@@ -850,21 +790,15 @@ public class ClickingPlayer {
                     break;
                 case 2:
                     getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.5F);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.75F), 2L);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1F), 4L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.75F), 2L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1F), 4L);
                     break;
                 case 3:
                     getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.5F);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.75F), 2L);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1F), 4L);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1.5F), 6L);
-                    Bukkit.getScheduler()
-                          .runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 2F), 8L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 0.75F), 2L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1F), 4L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 1.5F), 6L);
+                    Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_EXPERIENCE_ORB_PICKUP, 1, 2F), 8L);
                     break;
                 case 4: // achievement unlocked
                     getPlayer().playSound(getPlayer().getLocation(), Sound.ENTITY_PLAYER_LEVELUP, 1, 1F);

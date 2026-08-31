@@ -1,7 +1,7 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
-import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.inOrder;
+import static org.mockito.Mockito.never;
 import static org.mockito.Mockito.verify;
 import static org.mockito.Mockito.when;
 
@@ -33,9 +33,7 @@ class SessionShutdownTest {
         SessionShutdown.saveThenRemove(session, removeSession);
 
         InOrder order = inOrder(session, removeSession);
-        order.verify(session)
-             .shutdownAndSave();
-        order.verify(removeSession)
-             .run();
+        order.verify(session).shutdownAndSave();
+        order.verify(removeSession).run();
     }
 }
