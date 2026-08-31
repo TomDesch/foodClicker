@@ -15,31 +15,6 @@
             <scope>provided</scope>
         </dependency>
 
-        <!-- https://mvnrepository.com/artifact/com.zaxxer/HikariCP -->
-        <dependency>
-            <artifactId>HikariCP</artifactId>
-            <groupId>com.zaxxer</groupId>
-            <version>5.0.1</version>
-        </dependency>
-
-        <!-- JPA API -->
-        <dependency>
-            <artifactId>javax.persistence-api</artifactId>
-            <groupId>javax.persistence</groupId>
-            <version>2.2</version>
-        </dependency>
-
-        <dependency>
-            <artifactId>adventure-api</artifactId>
-            <groupId>net.kyori</groupId>
-            <version>4.17.0</version>
-        </dependency>
-        <dependency>
-            <artifactId>adventure-text-serializer-legacy</artifactId>
-            <groupId>net.kyori</groupId>
-            <version>4.17.0</version>
-        </dependency>
-
         <dependency>
             <groupId>org.junit.jupiter</groupId>
             <artifactId>junit-jupiter</artifactId>

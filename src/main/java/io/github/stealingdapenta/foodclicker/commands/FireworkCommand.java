@@ -15,11 +15,10 @@ import org.bukkit.entity.EntityType;
 import org.bukkit.entity.Firework;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.meta.FireworkMeta;
-import org.jetbrains.annotations.NotNull;
 
 public class FireworkCommand implements CommandExecutor {
 
-    public boolean onCommand(CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (!sender.hasPermission("foodclicker.firework")) {
             sender.sendMessage(colorStatic("&6[&bFoodClicker&6] &eYou're not permitted to use this command."));
             return true;

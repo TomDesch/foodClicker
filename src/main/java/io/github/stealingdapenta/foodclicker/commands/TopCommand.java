@@ -20,7 +20,6 @@ import org.bukkit.command.CommandSender;
 import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
-import org.jetbrains.annotations.NotNull;
 
 public class TopCommand implements CommandExecutor {
     private static final InventoryManager im = InventoryManager.getInstance();
@@ -49,7 +48,7 @@ public class TopCommand implements CommandExecutor {
                                                   (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
-    public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
+    public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
         if (sender instanceof ConsoleCommandSender) return true;
         Player p = (Player) sender;
         ClickingPlayer cp;
