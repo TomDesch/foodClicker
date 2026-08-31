@@ -40,7 +40,11 @@ public class FileManager {
     }
 
     public BigDecimal getBigDecimalByKey(ClickingPlayer cp, String key) {
-        String bigString = getConfig(cp).getString(key, "0");
+        return getBigDecimalByKey(getConfig(cp), key);
+    }
+
+    public BigDecimal getBigDecimalByKey(YamlConfiguration config, String key) {
+        String bigString = config.getString(key, "0");
         try {
             return new BigDecimal(bigString);
         } catch (NumberFormatException e) {
@@ -118,6 +122,10 @@ public class FileManager {
 
     public YamlConfiguration getConfig(Player cp) {
         return YamlConfiguration.loadConfiguration(getPlayerFile(cp));
+    }
+
+    public void saveConfig(ClickingPlayer cp, YamlConfiguration config) {
+        saveConfig(config, getPlayerFile(cp));
     }
 
     public void createFile(Player cp) {
