@@ -27,4 +27,8 @@ final class InitializationGate {
         pendingActions.clear();
         actions.forEach(Runnable::run);
     }
+
+    boolean isReady() {
+        return ready;
+    }
 }

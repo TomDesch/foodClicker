@@ -142,6 +142,22 @@ public class ClickingPlayer {
         initializationGate.runWhenReady(action);
     }
 
+    public boolean isReady() {
+        return initializationGate.isReady();
+    }
+
+    public void shutdownAndSave() {
+        if (!isReady()) {
+            return;
+        }
+        if (repeatingClickerTask != null) {
+            repeatingClickerTask.cancel();
+        }
+        possiblyTerminate();
+        getData().saveGameCloseDate(System.currentTimeMillis() / 1000);
+        getData().saveEverythingToFile();
+    }
+
     public boolean noActiveEvents() {
         return this.getActiveEvents()
                    .isEmpty();

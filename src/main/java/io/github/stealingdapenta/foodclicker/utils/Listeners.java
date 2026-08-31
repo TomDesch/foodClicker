@@ -124,6 +124,7 @@ public class Listeners implements Listener {
         long time = loadGameCloseDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadGameCloseDate(p);
 
         saveGameCloseTime(p, loadGameCloseTime(p) + time);
+        closePlayerSession(p);
     }
 
     @EventHandler
@@ -134,6 +135,7 @@ public class Listeners implements Listener {
         long time = loadGameCloseDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadGameCloseDate(p);
 
         saveGameCloseTime(p, loadGameCloseTime(p) + time);
+        closePlayerSession(p);
     }
 
     @EventHandler
@@ -144,6 +146,14 @@ public class Listeners implements Listener {
         long time = loadLogOutDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadLogOutDate(p);
 
         saveLoggedOutTime(p, loadLoggedOutTime(p) + time);
+    }
+
+    private void closePlayerSession(Player player) {
+        ClickingPlayer clickingPlayer = im.getClickingPlayerMap().get(player);
+        if (clickingPlayer != null) {
+            im.removePlayerFromMap(player);
+            clickingPlayer.shutdownAndSave();
+        }
     }
 
     @EventHandler

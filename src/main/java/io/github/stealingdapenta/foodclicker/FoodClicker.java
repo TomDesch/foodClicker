@@ -4,7 +4,10 @@ import io.github.stealingdapenta.foodclicker.commands.FireworkCommand;
 import io.github.stealingdapenta.foodclicker.commands.FoodClickerCommand;
 import io.github.stealingdapenta.foodclicker.commands.StatsCommand;
 import io.github.stealingdapenta.foodclicker.commands.TopCommand;
+import io.github.stealingdapenta.foodclicker.clickingplayers.SessionShutdown;
+import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.Listeners;
+import java.util.ArrayList;
 import java.util.Objects;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
@@ -45,9 +48,12 @@ public class FoodClicker extends JavaPlugin {
 
     @Override
     public void onDisable() {
-        instance = null;
+        InventoryManager inventoryManager = InventoryManager.getInstance();
+        SessionShutdown.saveReadySessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()));
+        inventoryManager.getClickingPlayerMap().clear();
         getLogger().info("FoodClicker: Thank you for playing. Goodbye!");
         getLogger().info("FoodClicker: Plugin disabled.");
+        instance = null;
     }
 
 }

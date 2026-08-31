@@ -1,6 +1,7 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
 import static org.junit.jupiter.api.Assertions.assertEquals;
+import static org.junit.jupiter.api.Assertions.assertTrue;
 
 import java.util.concurrent.atomic.AtomicInteger;
 import org.junit.jupiter.api.Test;
@@ -17,6 +18,7 @@ class InitializationGateTest {
 
         gate.markReady();
         assertEquals(1, calls.get());
+        assertTrue(gate.isReady());
     }
 
     @Test
