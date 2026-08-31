@@ -5,12 +5,10 @@ import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnEvents;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.util.ArrayList;
 import java.util.Random;
-import lombok.Getter;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
-@Getter
 public class Clickable {
 
     private static final Random r = new Random();
@@ -60,6 +58,30 @@ public class Clickable {
 
     public void setDuration(int duration) {
         this.duration = duration;
+    }
+
+    public int getSlotPosition() {
+        return slotPosition;
+    }
+
+    public ItemStack getItemStack() {
+        return itemStack;
+    }
+
+    public int getDuration() {
+        return duration;
+    }
+
+    public Inventory getInv() {
+        return inv;
+    }
+
+    public ItemStack getReplacedItem() {
+        return replacedItem;
+    }
+
+    public UpgradesBasedOnEvents getBonus() {
+        return bonus;
     }
 
     public int getNewRandomSlotPosition(Inventory inv) {

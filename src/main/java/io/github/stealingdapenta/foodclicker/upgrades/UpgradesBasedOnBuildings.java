@@ -21,7 +21,6 @@ import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.math.BigDecimal;
 import java.util.Arrays;
 import java.util.List;
-import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -166,23 +165,15 @@ public enum UpgradesBasedOnBuildings {
     HOUSEHOLDNAME_9("Stock market", HOUSEHOLDNAME, 1.95, 750),
     HOUSEHOLDNAME_10("Stock market", HOUSEHOLDNAME, 2, 1000);
 
-    @Getter
     private final String name;
-    @Getter
     private final String requiredKey;
-    @Getter
     private final int requiredValue;
-    @Getter
     private final List<String> lore;
     private final BigDecimal cost;
-    @Getter
     private final double multiplierIncrease;
-    @Getter
     private final String unlockedKey;
     private final InventoryManager im = InventoryManager.getInstance();
-    @Getter
     private final Buildings b;
-    @Getter
     private final Material material;
 
 
@@ -196,6 +187,38 @@ public enum UpgradesBasedOnBuildings {
         this.material = b.getMaterial();
         this.multiplierIncrease = multiplierIncrease;
         this.unlockedKey = getRequiredKey() + getRequiredValue();
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getRequiredKey() {
+        return requiredKey;
+    }
+
+    public int getRequiredValue() {
+        return requiredValue;
+    }
+
+    public List<String> getLore() {
+        return lore;
+    }
+
+    public double getMultiplierIncrease() {
+        return multiplierIncrease;
+    }
+
+    public String getUnlockedKey() {
+        return unlockedKey;
+    }
+
+    public Buildings getB() {
+        return b;
+    }
+
+    public Material getMaterial() {
+        return material;
     }
 
     public BigDecimal getCost(ClickingPlayer cp) {

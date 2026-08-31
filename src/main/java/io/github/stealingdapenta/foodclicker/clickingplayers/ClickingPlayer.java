@@ -42,7 +42,6 @@ import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Random;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -61,23 +60,15 @@ import org.bukkit.inventory.meta.FireworkMeta;
 public class ClickingPlayer {
     private static final InventoryManager im = InventoryManager.getInstance();
     private static final Random r = new Random();
-    @Getter
     private final Player player;
-    @Getter
     private final ArrayList<Clickable> activeEvents;
-    @Getter
     private final ArrayList<Clickable> activeBoosts;
     private final ClickingPlayerData cpd;
     private final ClickingPlayerSettings cps;
-    @Getter
     private GUI gui;
-    @Getter
     private RepeatingClickerTask repeatingClickerTask;
-    @Getter
     private double incomePerSecond;
-    @Getter
     private int closedDetector;
-    @Getter
     private boolean buymodeAll;
 
     public ClickingPlayer(Player player) {
@@ -89,6 +80,38 @@ public class ClickingPlayer {
         this.cps = new ClickingPlayerSettings(this);
 
         doAllCalculationsAsync();
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public ArrayList<Clickable> getActiveEvents() {
+        return activeEvents;
+    }
+
+    public ArrayList<Clickable> getActiveBoosts() {
+        return activeBoosts;
+    }
+
+    public GUI getGui() {
+        return gui;
+    }
+
+    public RepeatingClickerTask getRepeatingClickerTask() {
+        return repeatingClickerTask;
+    }
+
+    public double getIncomePerSecond() {
+        return incomePerSecond;
+    }
+
+    public int getClosedDetector() {
+        return closedDetector;
+    }
+
+    public boolean isBuymodeAll() {
+        return buymodeAll;
     }
 
     public ClickingPlayerSettings getSettings() {

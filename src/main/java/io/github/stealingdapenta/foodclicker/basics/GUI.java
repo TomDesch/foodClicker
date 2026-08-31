@@ -45,7 +45,6 @@ import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSetti
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.util.ArrayList;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
@@ -55,13 +54,10 @@ import org.bukkit.inventory.ItemStack;
 public class GUI {
 
     private final InventoryManager im = InventoryManager.getInstance();
-    @Getter
     private final ClickingPlayer cp;
-    @Getter
     private int gameState;
     private String GUItitle;
     private Inventory inventory;
-    @Getter
     private int achievementsPageNumber;
 
     public GUI(ClickingPlayer cp) {
@@ -69,6 +65,18 @@ public class GUI {
         this.inventory = createGameGUI();
         this.gameState = 0;
         this.achievementsPageNumber = 1;
+    }
+
+    public ClickingPlayer getCp() {
+        return cp;
+    }
+
+    public int getGameState() {
+        return gameState;
+    }
+
+    public int getAchievementsPageNumber() {
+        return achievementsPageNumber;
     }
 
     public void setAchievementsPageNumber(int achievementsPageNumber) {

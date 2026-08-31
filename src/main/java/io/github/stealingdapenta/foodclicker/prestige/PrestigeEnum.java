@@ -3,12 +3,10 @@ package io.github.stealingdapenta.foodclicker.prestige;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 
-@Getter
 public enum PrestigeEnum {
     AFKBUTONLINE("AFK playing", Material.EMERALD, 7, 1000, 0.01D, "%", "Have partial income while being online but with FoodClicker closed."),
 
@@ -73,6 +71,38 @@ public enum PrestigeEnum {
         this.material = material;
         this.bonusUnit = bonusUnit;
         this.lore = lore;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public double getBaseCost() {
+        return baseCost;
+    }
+
+    public int getMaxAmount() {
+        return maxAmount;
+    }
+
+    public String getKey() {
+        return key;
+    }
+
+    public double getBonus() {
+        return bonus;
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
+    public String getBonusUnit() {
+        return bonusUnit;
+    }
+
+    public String[] getLore() {
+        return lore;
     }
 
     public int getAmountOwned(ClickingPlayer cp) {

@@ -18,7 +18,6 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
@@ -26,7 +25,6 @@ import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-@Getter
 public class InventoryManager {
 
     private static InventoryManager inventoryManager;
@@ -40,6 +38,10 @@ public class InventoryManager {
             inventoryManager = new InventoryManager();
         }
         return inventoryManager;
+    }
+
+    public Map<Player, ClickingPlayer> getClickingPlayerMap() {
+        return clickingPlayerMap;
     }
 
     public void setInventoryBorder(Inventory inv, Material color) {

@@ -15,34 +15,21 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
 
 public class ClickingPlayerData {
 
     private final FileManager fm = FileManager.getInstance();
-    @Getter
     private final Map<Buildings, Integer> buildingsOwned;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseMultipliers;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseCostMultipliers;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseCostIncreaser;
-    @Getter
     private final Map<String, Boolean> upgradesUnlocked;
-    @Getter
     private final Map<String, Integer> generalIntegerStats;
-    @Getter
     private final Map<String, Double> generalDoubleStats;
-    @Getter
     private final Map<String, BigDecimal> generalBigDecimals;
-    @Getter
     private final Map<String, Boolean> achievements;
-    @Getter
     private final Map<PrestigeEnum, Integer> prestigeShopBonusses;
-    @Getter
     private final ClickingPlayer cp;
-    @Getter
     private boolean prestigeHead;
 
     public ClickingPlayerData(ClickingPlayer cp) {
@@ -59,6 +46,54 @@ public class ClickingPlayerData {
         this.prestigeShopBonusses = new HashMap<>();
         this.achievements = new HashMap<>();
         this.prestigeHead = false;
+    }
+
+    public Map<Buildings, Integer> getBuildingsOwned() {
+        return buildingsOwned;
+    }
+
+    public Map<Buildings, Double> getBuildingsBaseMultipliers() {
+        return buildingsBaseMultipliers;
+    }
+
+    public Map<Buildings, Double> getBuildingsBaseCostMultipliers() {
+        return buildingsBaseCostMultipliers;
+    }
+
+    public Map<Buildings, Double> getBuildingsBaseCostIncreaser() {
+        return buildingsBaseCostIncreaser;
+    }
+
+    public Map<String, Boolean> getUpgradesUnlocked() {
+        return upgradesUnlocked;
+    }
+
+    public Map<String, Integer> getGeneralIntegerStats() {
+        return generalIntegerStats;
+    }
+
+    public Map<String, Double> getGeneralDoubleStats() {
+        return generalDoubleStats;
+    }
+
+    public Map<String, BigDecimal> getGeneralBigDecimals() {
+        return generalBigDecimals;
+    }
+
+    public Map<String, Boolean> getAchievements() {
+        return achievements;
+    }
+
+    public Map<PrestigeEnum, Integer> getPrestigeShopBonusses() {
+        return prestigeShopBonusses;
+    }
+
+    public ClickingPlayer getCp() {
+        return cp;
+    }
+
+    public boolean isPrestigeHead() {
+        return prestigeHead;
     }
 
     public long loadGameCloseDate() {

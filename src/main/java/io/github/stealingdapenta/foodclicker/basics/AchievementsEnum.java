@@ -19,7 +19,6 @@ import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
@@ -160,11 +159,8 @@ public enum AchievementsEnum {
     ;
 
     private static final InventoryManager im = InventoryManager.getInstance();
-    @Getter
     private final String achievement;
-    @Getter
     private final Material material;
-    @Getter
     private final String[] lore;
     private final Buildings b;
 
@@ -184,6 +180,18 @@ public enum AchievementsEnum {
 
     public Buildings getBuilding() {
         return this.b;
+    }
+
+    public String getAchievement() {
+        return achievement;
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
+    public String[] getLore() {
+        return lore;
     }
 
     public ItemStack createItem(ClickingPlayer cp) {

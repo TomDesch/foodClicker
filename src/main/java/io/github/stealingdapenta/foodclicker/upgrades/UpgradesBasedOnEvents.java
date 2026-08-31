@@ -21,7 +21,6 @@ import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Random;
-import lombok.Getter;
 import org.bukkit.Material;
 
 public enum UpgradesBasedOnEvents {
@@ -86,16 +85,11 @@ public enum UpgradesBasedOnEvents {
     PARALYSE("Cold Fingers", Material.APPLE, "Click Multiplier", 0.1, 14),
     ;
 
-    @Getter
     private final double multiplierIncrease;
-    @Getter
     private final String affectingKey;
     private final int boostDuration;
-    @Getter
     private final Buildings buildings;
-    @Getter
     private final String name;
-    @Getter
     private final Material material;
     private final Random r = new Random();
 
@@ -133,6 +127,26 @@ public enum UpgradesBasedOnEvents {
         this.buildings = buildings;
         this.name = name;
         this.material = material;
+    }
+
+    public double getMultiplierIncrease() {
+        return multiplierIncrease;
+    }
+
+    public String getAffectingKey() {
+        return affectingKey;
+    }
+
+    public Buildings getBuildings() {
+        return buildings;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Material getMaterial() {
+        return material;
     }
 
     public int getBoostDuration(ClickingPlayer cp) {

@@ -6,7 +6,6 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.FAIRTR
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.ItemStack;
 
@@ -32,17 +31,11 @@ public enum Buildings {
     //Bank (Miners), Lab (professors), University (Doctors), Nether Portal (Gold farm idk), End portal (end farm idk), +7;
 
 
-    @Getter
     private final String name;
-    @Getter
     private final String lore;
-    @Getter
     private final double baseCost;
-    @Getter
     private final double baseProduction;
-    @Getter
     private final Material material;
-    @Getter
     private final int guiSlot;
     private final InventoryManager im = InventoryManager.getInstance();
 
@@ -53,6 +46,30 @@ public enum Buildings {
         this.baseProduction = baseProduction;
         this.material = material;
         this.guiSlot = guiSlot;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getLore() {
+        return lore;
+    }
+
+    public double getBaseCost() {
+        return baseCost;
+    }
+
+    public double getBaseProduction() {
+        return baseProduction;
+    }
+
+    public Material getMaterial() {
+        return material;
+    }
+
+    public int getGuiSlot() {
+        return guiSlot;
     }
 
     public ItemStack createItem(ClickingPlayer cp) {
