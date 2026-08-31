@@ -60,6 +60,7 @@ import org.bukkit.inventory.meta.FireworkMeta;
 public class ClickingPlayer {
     private static final InventoryManager im = InventoryManager.getInstance();
     private static final Random r = new Random();
+    private final InitializationGate initializationGate = new InitializationGate();
     private final Player player;
     private final ArrayList<Clickable> activeEvents;
     private final ArrayList<Clickable> activeBoosts;
@@ -123,17 +124,22 @@ public class ClickingPlayer {
     }
 
     private void doAllCalculationsAsync() {
-        ClickingPlayer cp = this;
-
         Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-            cp.getData().loadEverythingFromFile();
-            cp.incomePerSecond = calculateTotalIncomePerSecond();
-            cp.gui = new GUI(this);
-            cp.repeatingClickerTask = createTask();
-
-            earnAfkIncomes();
-
+            getData().loadEverythingFromFile();
+            incomePerSecond = calculateTotalIncomePerSecond();
+            Bukkit.getScheduler().runTask(FoodClicker.getInstance(), this::finishInitialization);
         });
+    }
+
+    private void finishInitialization() {
+        gui = new GUI(this);
+        repeatingClickerTask = createTask();
+        earnAfkIncomes();
+        initializationGate.markReady();
+    }
+
+    public void runWhenReady(Runnable action) {
+        initializationGate.runWhenReady(action);
     }
 
     public boolean noActiveEvents() {
@@ -389,13 +395,11 @@ public class ClickingPlayer {
 
 
                         cp.possiblyTerminate();
-
-                        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-                            cp.getData().saveEverythingToFile();
-                            im.removePlayerFromMap(player);
-                        });
-
-                        System.out.println("FoodClicker: " + player.getName() + " 's file saved.");
+                        im.removePlayerFromMap(player);
+                        Bukkit.getScheduler().runTaskAsynchronously(
+                                FoodClicker.getInstance(),
+                                () -> cp.getData().saveEverythingToFile()
+                        );
                         this.cancel();
                     }
                 }

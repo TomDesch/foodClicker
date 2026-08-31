@@ -3,7 +3,6 @@ package io.github.stealingdapenta.foodclicker.commands;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.LOCALLEADERBOARD;
 import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
 
-import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
@@ -15,7 +14,6 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -70,9 +68,9 @@ public class TopCommand implements CommandExecutor {
             cp = new ClickingPlayer(p);
         }
 
-        p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait up to &a5s &ewhile we load the data."));
+        p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait while we load the data."));
 
-        Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
+        cp.runWhenReady(() -> {
             if (LOCALLEADERBOARD.getAmountOwned(cp) > 0) {
                 Map<String, BigDecimal> allData = new HashMap<>();
 
@@ -112,7 +110,7 @@ public class TopCommand implements CommandExecutor {
                 cp.getRepeatingClickerTask().cancel();
             }
 
-        }, 50L);
+        });
 
 
         return true;

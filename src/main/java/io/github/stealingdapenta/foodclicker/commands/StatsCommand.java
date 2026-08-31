@@ -2,7 +2,6 @@ package io.github.stealingdapenta.foodclicker.commands;
 
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.PRESTIGEBRAG;
 
-import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
@@ -43,10 +42,9 @@ public class StatsCommand implements CommandExecutor {
             cp = new ClickingPlayer(p);
         }
 
-        p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait up to &a5s &ewhile we load your data."));
+        p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait while we load your data."));
 
-        Bukkit.getScheduler()
-              .runTaskLater(FoodClicker.getInstance(), () -> {
+        cp.runWhenReady(() -> {
                   boolean isPrestigeHead = false;
 
                   if (args.length >= 1) {
@@ -76,7 +74,7 @@ public class StatsCommand implements CommandExecutor {
 
                   cp.getRepeatingClickerTask()
                     .cancel();
-              }, 50L);
+        });
 
         return true;
     }

@@ -2,9 +2,9 @@ package io.github.stealingdapenta.foodclicker.commands;
 
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
-import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -14,6 +14,7 @@ import org.jetbrains.annotations.NotNull;
 
 public class FoodClickerCommand implements CommandExecutor {
     private final InventoryManager im = InventoryManager.getInstance();
+    private final FileManager fm = FileManager.getInstance();
     private final AntiSpamManager asm = AntiSpamManager.getInstance();
 
     public boolean onCommand(@NotNull CommandSender sender, @NotNull Command command, @NotNull String label, String[] args) {
@@ -31,18 +32,17 @@ public class FoodClickerCommand implements CommandExecutor {
 
         if (im.isPlayerInMap(p)) {
             ClickingPlayer cp = im.getClickingPlayerMap().get(p);
-            cp.getGui().setGameState(0);
+            cp.runWhenReady(() -> cp.getGui().setGameState(0));
 
         } else {
-            ClickingPlayer cp = new ClickingPlayer(p);
-            long time = cp.getData().loadGameCloseDate() == 0 ? 0 : System.currentTimeMillis() / 1000 - cp.getData().loadGameCloseDate();
-            cp.getData().saveGameCloseTime(cp.getData().loadGameCloseTime() + time);
+            long closeDate = fm.getLongByKey(p, "gameCloseDate");
+            long elapsed = closeDate == 0 ? 0 : System.currentTimeMillis() / 1000 - closeDate;
+            fm.setLongByKey(p, "gameCloseTime", fm.getLongByKey(p, "gameCloseTime") + elapsed);
 
+            ClickingPlayer cp = new ClickingPlayer(p);
             im.addClickingPlayerToMap(cp);
-            p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait &a2s &ewhile we load your data."));
-            Bukkit.getScheduler()
-                  .runTaskLater(FoodClicker.getInstance(), () -> cp.getGui()
-                                                                   .setGameState(0), 40L);
+            p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait while we load your data."));
+            cp.runWhenReady(() -> cp.getGui().setGameState(0));
         }
         return true;
     }
