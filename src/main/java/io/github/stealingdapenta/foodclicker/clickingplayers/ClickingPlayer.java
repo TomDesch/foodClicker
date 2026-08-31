@@ -314,50 +314,50 @@ public class ClickingPlayer {
     }
 
     public void possiblyDoEvent() {
-        if (r.nextInt(100) < getData().getGeneralDoubleStats().get("eventChance")) {
+        if (shouldTriggerEvent(getData().getGeneralDoubleStats().get("eventChance"), r.nextDouble())) {
             doNewEvent();
         }
+    }
+
+    static boolean shouldTriggerEvent(double chancePercent, double randomUnitValue) {
+        return randomUnitValue * 100 < chancePercent;
     }
 
     public void doNewEvent() {
         Inventory window = this.getGui().getGameWindow();
         final List<UpgradesBasedOnEvents> eventBonuses = Collections.unmodifiableList(Arrays.asList(UpgradesBasedOnEvents.values()));
 
-        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-            UpgradesBasedOnEvents chosen = null;
-            while (chosen == null) {
-                int eventChooser = r.nextInt(eventBonuses.size());
-                UpgradesBasedOnEvents possiblyChosen = eventBonuses.get(eventChooser);
+        double eventLimit = 30 + EVENTCHANCELIMIT.getCurrentBonus(this);
+        if (getData().getGeneralDoubleStats().get("eventChance") > eventLimit) {
+            getData().getGeneralDoubleStats().put("eventChance", eventLimit);
+        }
 
-                if (possiblyChosen.getAffectingKey().equals("eventChance")) {
+        List<UpgradesBasedOnEvents> eligibleEvents = eventBonuses.stream()
+                .filter(event -> eventIsEligible(event, eventLimit))
+                .toList();
+        if (eligibleEvents.isEmpty()) {
+            return;
+        }
 
-                    double eventLimit = 30 + EVENTCHANCELIMIT.getCurrentBonus(this);
+        UpgradesBasedOnEvents chosen = eligibleEvents.get(r.nextInt(eligibleEvents.size()));
+        Clickable event = new Clickable(8 + r.nextInt(12) + (int) EVENTTIME.getCurrentBonus(this), window, chosen, this);
+        doSoundEffect(20);
+        setEventItem(event);
+        addActiveEvent(event);
+    }
 
-                    if (getData().getGeneralDoubleStats().get("eventChance") > eventLimit) {
-                        getData().getGeneralDoubleStats().put("eventChance", eventLimit);
-                    }
-                    if (getData().getGeneralDoubleStats().get("eventChance") == eventLimit) {
-                        continue;
-                    }
-                }
-
-                //nerf stock events if current bank is over 65% of current legacy earnings
-                if (possiblyChosen.getAffectingKey().equals("money") && possiblyChosen.getMultiplierIncrease() > 1D) {
-                    if ((0.65D + STONKS.getCurrentBonus(this) / 100) * cpd.getGeneralBigDecimals().get("legacy earnings").doubleValue() < cpd.getGeneralBigDecimals().get("money").doubleValue()) {
-                        continue;
-                    }
-                }
-
-                if (possiblyChosen.getBuildings() == null || (getData().getSpecificBuildingAmount(possiblyChosen.getBuildings()) > 0)) {
-                    chosen = possiblyChosen;
-                }
-            }
-            Clickable event = new Clickable(8 + r.nextInt(12) + (int) EVENTTIME.getCurrentBonus(this), window, chosen, this);
-            doSoundEffect(20);
-            setEventItem(event);
-            addActiveEvent(event);
-
-        });
+    private boolean eventIsEligible(UpgradesBasedOnEvents event, double eventLimit) {
+        if (event.getAffectingKey().equals("eventChance")
+                && getData().getGeneralDoubleStats().get("eventChance") >= eventLimit) {
+            return false;
+        }
+        if (event.getAffectingKey().equals("money") && event.getMultiplierIncrease() > 1D
+                && (0.65D + STONKS.getCurrentBonus(this) / 100)
+                * cpd.getGeneralBigDecimals().get("legacy earnings").doubleValue()
+                < cpd.getGeneralBigDecimals().get("money").doubleValue()) {
+            return false;
+        }
+        return event.getBuildings() == null || getData().getSpecificBuildingAmount(event.getBuildings()) > 0;
     }
 
     private void possiblyGetLeprechaun() {
