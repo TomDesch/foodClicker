@@ -49,7 +49,7 @@ public class FoodClicker extends JavaPlugin {
     @Override
     public void onDisable() {
         InventoryManager inventoryManager = InventoryManager.getInstance();
-        SessionShutdown.saveReadySessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()));
+        SessionShutdown.shutdownSessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()));
         inventoryManager.getClickingPlayerMap().clear();
         getLogger().info("FoodClicker: Thank you for playing. Goodbye!");
         getLogger().info("FoodClicker: Plugin disabled.");

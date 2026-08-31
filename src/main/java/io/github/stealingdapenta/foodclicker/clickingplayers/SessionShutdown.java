@@ -7,10 +7,8 @@ public final class SessionShutdown {
     private SessionShutdown() {
     }
 
-    public static void saveReadySessions(Collection<ClickingPlayer> sessions) {
-        sessions.stream()
-                .filter(ClickingPlayer::isReady)
-                .forEach(ClickingPlayer::shutdownAndSave);
+    public static void shutdownSessions(Collection<ClickingPlayer> sessions) {
+        sessions.forEach(ClickingPlayer::shutdownAndSave);
     }
 
     public static void saveThenRemove(ClickingPlayer session, Runnable removeSession) {
