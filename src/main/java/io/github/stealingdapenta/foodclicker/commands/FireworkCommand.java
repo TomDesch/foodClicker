@@ -52,11 +52,28 @@ public class FireworkCommand implements CommandExecutor {
             return true;
         }
 
+        if (!isValidAmount(amount)) {
+            sender.sendMessage(colorStatic("&6[&bFoodClicker&6] &eAmount must be between &b1 &eand &b100&e."));
+            return true;
+        }
+        if (!isValidPower(size)) {
+            sender.sendMessage(colorStatic("&6[&bFoodClicker&6] &eSize must be between &b0 &eand &b128&e."));
+            return true;
+        }
+
         doFireWorks(target, amount, size);
         sender.sendMessage(
                 colorStatic("&6[&bFoodClicker&6] &eSpawned &b" + amount + "&e fireworks at &b" + target.getName() + " &ewith size &b" + size + "&e."));
 
         return true;
+    }
+
+    static boolean isValidAmount(int amount) {
+        return amount >= 1 && amount <= 100;
+    }
+
+    static boolean isValidPower(int power) {
+        return power >= 0 && power <= 128;
     }
 
     private void doFireWorks(Player target, int amount, int size) {
