@@ -12,4 +12,9 @@ public final class SessionShutdown {
                 .filter(ClickingPlayer::isReady)
                 .forEach(ClickingPlayer::shutdownAndSave);
     }
+
+    public static void saveThenRemove(ClickingPlayer session, Runnable removeSession) {
+        session.shutdownAndSave();
+        removeSession.run();
+    }
 }

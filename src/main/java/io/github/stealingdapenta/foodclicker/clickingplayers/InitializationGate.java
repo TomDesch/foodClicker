@@ -8,9 +8,13 @@ final class InitializationGate {
 
     private final List<Runnable> pendingActions = new ArrayList<>();
     private boolean ready;
+    private boolean cancelled;
 
     void runWhenReady(Runnable action) {
         Objects.requireNonNull(action, "action");
+        if (cancelled) {
+            return;
+        }
         if (ready) {
             action.run();
             return;
@@ -19,7 +23,7 @@ final class InitializationGate {
     }
 
     void markReady() {
-        if (ready) {
+        if (ready || cancelled) {
             return;
         }
         ready = true;
@@ -30,5 +34,14 @@ final class InitializationGate {
 
     boolean isReady() {
         return ready;
+    }
+
+    void cancel() {
+        cancelled = true;
+        pendingActions.clear();
+    }
+
+    boolean isCancelled() {
+        return cancelled;
     }
 }

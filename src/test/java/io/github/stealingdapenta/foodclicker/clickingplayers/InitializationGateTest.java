@@ -43,4 +43,18 @@ class InitializationGateTest {
 
         assertEquals(1, calls.get());
     }
+
+    @Test
+    void cancellationDiscardsActionsAndPreventsInitialization() {
+        InitializationGate gate = new InitializationGate();
+        AtomicInteger calls = new AtomicInteger();
+        gate.runWhenReady(calls::incrementAndGet);
+
+        gate.cancel();
+        gate.markReady();
+        gate.runWhenReady(calls::incrementAndGet);
+
+        assertEquals(0, calls.get());
+        assertTrue(gate.isCancelled());
+    }
 }
