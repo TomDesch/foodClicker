@@ -9,6 +9,7 @@ import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.Listeners;
 import java.util.ArrayList;
 import java.util.Objects;
+import java.util.logging.Level;
 import java.util.logging.Logger;
 import org.bukkit.Bukkit;
 import org.bukkit.ChatColor;
@@ -49,7 +50,8 @@ public class FoodClicker extends JavaPlugin {
     @Override
     public void onDisable() {
         InventoryManager inventoryManager = InventoryManager.getInstance();
-        SessionShutdown.shutdownSessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()));
+        SessionShutdown.shutdownSessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()))
+                       .forEach(failure -> getLogger().log(Level.SEVERE, "Unable to save a FoodClicker session during shutdown", failure));
         inventoryManager.getClickingPlayerMap().clear();
         getLogger().info("FoodClicker: Thank you for playing. Goodbye!");
         getLogger().info("FoodClicker: Plugin disabled.");

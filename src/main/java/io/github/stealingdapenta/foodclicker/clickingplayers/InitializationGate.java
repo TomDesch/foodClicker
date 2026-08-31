@@ -8,7 +8,7 @@ final class InitializationGate {
 
     private final List<Runnable> pendingActions = new ArrayList<>();
     private boolean ready;
-    private boolean cancelled;
+    private volatile boolean cancelled;
 
     void runWhenReady(Runnable action) {
         Objects.requireNonNull(action, "action");

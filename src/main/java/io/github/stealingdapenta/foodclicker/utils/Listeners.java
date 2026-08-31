@@ -36,6 +36,7 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STONKS
 import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
+import io.github.stealingdapenta.foodclicker.clickingplayers.SessionShutdown;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
 import org.bukkit.Material;
@@ -151,8 +152,10 @@ public class Listeners implements Listener {
     private void closePlayerSession(Player player) {
         ClickingPlayer clickingPlayer = im.getClickingPlayerMap().get(player);
         if (clickingPlayer != null) {
-            im.removePlayerFromMap(player);
-            clickingPlayer.shutdownAndSave();
+            SessionShutdown.saveThenRemove(
+                    clickingPlayer,
+                    () -> im.removePlayerFromMap(player)
+            );
         }
     }
 

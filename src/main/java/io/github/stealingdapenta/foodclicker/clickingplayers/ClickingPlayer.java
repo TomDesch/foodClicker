@@ -56,6 +56,8 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.plugin.IllegalPluginAccessException;
+import org.bukkit.scheduler.BukkitTask;
 
 public class ClickingPlayer {
     private static final InventoryManager im = InventoryManager.getInstance();
@@ -67,6 +69,7 @@ public class ClickingPlayer {
     private final ClickingPlayerData cpd;
     private final ClickingPlayerSettings cps;
     private GUI gui;
+    private BukkitTask initializationTask;
     private RepeatingClickerTask repeatingClickerTask;
     private double incomePerSecond;
     private int closedDetector;
@@ -124,10 +127,19 @@ public class ClickingPlayer {
     }
 
     private void doAllCalculationsAsync() {
-        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
+        FoodClicker plugin = FoodClicker.getInstance();
+        initializationTask = Bukkit.getScheduler().runTaskAsynchronously(plugin, () -> {
             getData().loadEverythingFromFile();
             incomePerSecond = calculateTotalIncomePerSecond();
-            Bukkit.getScheduler().runTask(FoodClicker.getInstance(), this::finishInitialization);
+            if (!initializationGate.isCancelled() && plugin.isEnabled()) {
+                try {
+                    Bukkit.getScheduler().runTask(plugin, this::finishInitialization);
+                } catch (IllegalPluginAccessException failure) {
+                    if (!initializationGate.isCancelled() && plugin.isEnabled()) {
+                        throw failure;
+                    }
+                }
+            }
         });
     }
 
@@ -152,6 +164,9 @@ public class ClickingPlayer {
     public void shutdownAndSave() {
         if (!isReady()) {
             initializationGate.cancel();
+            if (initializationTask != null) {
+                initializationTask.cancel();
+            }
             return;
         }
         if (repeatingClickerTask != null) {
