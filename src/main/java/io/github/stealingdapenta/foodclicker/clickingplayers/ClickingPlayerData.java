@@ -18,7 +18,7 @@ import java.util.Map;
 
 public class ClickingPlayerData {
 
-    private final FileManager fm = FileManager.getInstance();
+    private final FileManager fm;
     private final Map<Buildings, Integer> buildingsOwned;
     private final Map<Buildings, Double> buildingsBaseMultipliers;
     private final Map<Buildings, Double> buildingsBaseCostMultipliers;
@@ -33,7 +33,12 @@ public class ClickingPlayerData {
     private boolean prestigeHead;
 
     public ClickingPlayerData(ClickingPlayer cp) {
+        this(cp, FileManager.getInstance());
+    }
+
+    ClickingPlayerData(ClickingPlayer cp, FileManager fm) {
         this.cp = cp;
+        this.fm = fm;
 
         this.buildingsOwned = new HashMap<>();
         this.buildingsBaseMultipliers = new HashMap<>();
@@ -97,7 +102,7 @@ public class ClickingPlayerData {
     }
 
     public long loadGameCloseDate() {
-        return fm.getIntByKey(getCp(), "gameCloseDate");
+        return fm.getLongByKey(getCp(), "gameCloseDate");
     }
 
     public void resetGameCloseTime() {
@@ -377,7 +382,7 @@ public class ClickingPlayerData {
 
     public void saveGeneralIntegerStats() {
         for (Map.Entry<String, Integer> entry : getGeneralIntegerStats().entrySet()) {
-            fm.setDoubleByKey(getCp(), entry.getKey(), entry.getValue());
+            fm.setIntByKey(getCp(), entry.getKey(), entry.getValue());
         }
     }
 
