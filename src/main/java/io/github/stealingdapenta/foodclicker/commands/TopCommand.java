@@ -3,6 +3,7 @@ package io.github.stealingdapenta.foodclicker.commands;
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.LOCALLEADERBOARD;
 import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
 
+import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
@@ -14,6 +15,7 @@ import java.util.HashMap;
 import java.util.LinkedHashMap;
 import java.util.Map;
 import java.util.stream.Collectors;
+import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
@@ -41,7 +43,7 @@ public class TopCommand implements CommandExecutor {
         return (config.contains("Player Name") && config.contains("alltimeearnings"));
     }
 
-    private Map<String, BigDecimal> sortByValue(Map<String, BigDecimal> unsortMap) {
+    static Map<String, BigDecimal> sortByValue(Map<String, BigDecimal> unsortMap) {
         return unsortMap.entrySet().stream()
                         .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
                         .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
@@ -52,6 +54,7 @@ public class TopCommand implements CommandExecutor {
         if (sender instanceof ConsoleCommandSender) return true;
         Player p = (Player) sender;
         ClickingPlayer cp;
+        boolean temporarySession;
 
 
         if (asm.playerIsSpamming(p)) {
@@ -63,16 +66,23 @@ public class TopCommand implements CommandExecutor {
 
         if (im.isPlayerInMap(p)) {
             cp = im.getClickingPlayerMap().get(p);
+            temporarySession = false;
         } else {
             cp = new ClickingPlayer(p);
+            temporarySession = true;
         }
 
         p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait while we load the data."));
 
         cp.runWhenReady(() -> {
-            if (LOCALLEADERBOARD.getAmountOwned(cp) > 0) {
-                Map<String, BigDecimal> allData = new HashMap<>();
+            if (LOCALLEADERBOARD.getAmountOwned(cp) < 1) {
+                p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eYou have not unlocked this prestige command yet."));
+                cancelTemporarySession(cp, temporarySession);
+                return;
+            }
 
+            Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
+                Map<String, BigDecimal> allData = new HashMap<>();
                 File[] files = fm.getUserFiles().listFiles();
 
                 if (files != null) {
@@ -85,33 +95,45 @@ public class TopCommand implements CommandExecutor {
                     }
 
                     Map<String, BigDecimal> sortedData = sortByValue(allData);
-
-                    p.sendMessage(colorStatic("&6-------------------------------"));
-                    p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eTop 10 richest people:"));
-                    p.sendMessage(colorStatic("&7&o          (All time earnings)"));
-
-                    int index = 1;
-
-                    for (Map.Entry<String, BigDecimal> entry : sortedData.entrySet()) {
-                        p.sendMessage(colorStatic("&6" + index + ". &e" + entry.getKey() + " &6- &b" + im.truncateNumber(entry.getValue())));
-                        index++;
-
-                        if (index > 10) {
-                            break;
-                        }
-                    }
-
-                    p.sendMessage(colorStatic("&6-------------------------------"));
+                    Bukkit.getScheduler().runTask(
+                            FoodClicker.getInstance(),
+                            () -> sendLeaderboard(p, cp, sortedData, temporarySession)
+                    );
                 } else {
-                    p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eYou have not unlocked this prestige command yet."));
+                    Bukkit.getScheduler().runTask(FoodClicker.getInstance(), () -> {
+                        p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eUnable to read leaderboard data."));
+                        cancelTemporarySession(cp, temporarySession);
+                    });
                 }
-
-                cp.getRepeatingClickerTask().cancel();
-            }
-
+            });
         });
 
-
         return true;
+    }
+
+    private void sendLeaderboard(Player player, ClickingPlayer cp, Map<String, BigDecimal> sortedData, boolean temporarySession) {
+        player.sendMessage(colorStatic("&6-------------------------------"));
+        player.sendMessage(colorStatic("&6[&bFoodClicker&6] &eTop 10 richest people:"));
+        player.sendMessage(colorStatic("&7&o          (All time earnings)"));
+
+        int index = 1;
+
+        for (Map.Entry<String, BigDecimal> entry : sortedData.entrySet()) {
+            player.sendMessage(colorStatic("&6" + index + ". &e" + entry.getKey() + " &6- &b" + im.truncateNumber(entry.getValue())));
+            index++;
+
+            if (index > 10) {
+                break;
+            }
+        }
+
+        player.sendMessage(colorStatic("&6-------------------------------"));
+        cancelTemporarySession(cp, temporarySession);
+    }
+
+    private void cancelTemporarySession(ClickingPlayer cp, boolean temporarySession) {
+        if (temporarySession) {
+            cp.getRepeatingClickerTask().cancel();
+        }
     }
 }
