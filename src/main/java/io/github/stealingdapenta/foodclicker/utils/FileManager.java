@@ -1,24 +1,26 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
-import static io.github.stealingdapenta.foodclicker.FoodClicker.LOGGER;
-
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import java.io.File;
-import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.PrintWriter;
+import java.io.UncheckedIOException;
 import java.math.BigDecimal;
-import java.util.Objects;
-import org.bukkit.ChatColor;
+import java.util.function.Supplier;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 public class FileManager {
 
     private static FileManager fileManager;
+    private final Supplier<File> dataFolderSupplier;
 
     private FileManager() {
+        this(() -> FoodClicker.getInstance().getDataFolder());
+    }
+
+    FileManager(Supplier<File> dataFolderSupplier) {
+        this.dataFolderSupplier = dataFolderSupplier;
     }
 
     public static FileManager getInstance() {
@@ -39,17 +41,17 @@ public class FileManager {
 
     public BigDecimal getBigDecimalByKey(ClickingPlayer cp, String key) {
         String bigString = getConfig(cp).getString(key, "0");
-        return new BigDecimal(bigString);
+        try {
+            return new BigDecimal(bigString);
+        } catch (NumberFormatException e) {
+            throw new IllegalStateException("Invalid decimal value for player data key '" + key + "'", e);
+        }
     }
 
     public void setBigDecimalByKey(ClickingPlayer cp, String key, BigDecimal score) {
         YamlConfiguration c = getConfig(cp);
         c.set(key, score.toPlainString());
-        try {
-            c.save(getPlayerFile(cp));
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
+        saveConfig(c, getPlayerFile(cp));
     }
 
     public int getIntByKey(ClickingPlayer cp, String key) {
@@ -81,11 +83,7 @@ public class FileManager {
     public void setDoubleByKey(ClickingPlayer cp, String key, double score) {
         YamlConfiguration c = getConfig(cp);
         c.set(key, score);
-        try {
-            c.save(getPlayerFile(cp));
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
+        saveConfig(c, getPlayerFile(cp));
     }
 
     public void setLongByKey(ClickingPlayer cp, String key, long score) {
@@ -95,11 +93,7 @@ public class FileManager {
     public void setLongByKey(Player cp, String key, long score) {
         YamlConfiguration c = getConfig(cp);
         c.set(key, score);
-        try {
-            c.save(getPlayerFile(cp));
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
+        saveConfig(c, getPlayerFile(cp));
     }
 
     public void setIntByKey(ClickingPlayer cp, String key, int score) {
@@ -109,21 +103,13 @@ public class FileManager {
     public void setIntByKey(Player cp, String key, int score) {
         YamlConfiguration c = getConfig(cp);
         c.set(key, score);
-        try {
-            c.save(getPlayerFile(cp));
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
+        saveConfig(c, getPlayerFile(cp));
     }
 
     public void setBooleanByKey(ClickingPlayer cp, String key, boolean score) {
         YamlConfiguration c = getConfig(cp);
         c.set(key, score);
-        try {
-            c.save(getPlayerFile(cp));
-        } catch (IOException e) {
-            LOGGER.severe(e.getMessage());
-        }
+        saveConfig(c, getPlayerFile(cp));
     }
 
     public YamlConfiguration getConfig(ClickingPlayer cp) {
@@ -135,30 +121,9 @@ public class FileManager {
     }
 
     public void createFile(Player cp) {
-        File file = new File(getUserFiles(), Objects.requireNonNull(cp.getPlayer())
-                                                    .getUniqueId() + ".yml");
-        PrintWriter writer = null;
-        try {
-            writer = new PrintWriter(file);
-        } catch (FileNotFoundException e) {
-            LOGGER.severe(e.getMessage());
-        }
-        try {
-            file.createNewFile();
-
-            writer = new PrintWriter(file);
-            writer.println("Player Name: " + cp.getPlayer()
-                                               .getName());
-
-            System.out.println("FoodClicker: " + cp.getPlayer()
-                                                   .getName() + "'s FoodClicker file created.");
-        } catch (IOException e1) {
-            System.out.println(ChatColor.RED + "FoodClicker Player file creation failed!");
-            LOGGER.severe(e1.getMessage());
-        } finally {
-            assert writer != null;
-            writer.close();
-        }
+        YamlConfiguration config = new YamlConfiguration();
+        config.set("Player Name", cp.getName());
+        saveConfig(config, playerFilePath(cp));
     }
 
     public File getPlayerFile(ClickingPlayer cp) {
@@ -166,22 +131,19 @@ public class FileManager {
     }
 
     public File getPlayerFile(Player cp) {
-        File file = new File(getUserFiles(), Objects.requireNonNull(cp.getPlayer())
-                                                    .getUniqueId() + ".yml");
+        File file = playerFilePath(cp);
 
         if (!file.exists()) {
             createFile(cp);
-            savePlayerFile(cp);
         }
 
         return file;
     }
 
     public File getUserFiles() {
-        File userFiles = new File(FoodClicker.getInstance()
-                                             .getDataFolder() + File.separator + "foodclicker");
-        if (!userFiles.exists()) {
-            userFiles.mkdirs();
+        File userFiles = new File(dataFolderSupplier.get(), "foodclicker");
+        if (!userFiles.isDirectory() && !userFiles.mkdirs()) {
+            throw new IllegalStateException("Unable to create player data directory: " + userFiles);
         }
         return userFiles;
     }
@@ -191,19 +153,24 @@ public class FileManager {
     }
 
     public void savePlayerFile(Player cp) {
-        String uuid = Objects.requireNonNull(cp.getPlayer())
-                             .getUniqueId()
-                             .toString();
-        File file = new File(getUserFiles(), uuid + ".yml");
+        File file = playerFilePath(cp);
 
         if (!file.exists()) {
             createFile(cp);
+            return;
         }
+        saveConfig(YamlConfiguration.loadConfiguration(file), file);
+    }
+
+    private File playerFilePath(Player player) {
+        return new File(getUserFiles(), player.getUniqueId() + ".yml");
+    }
+
+    private void saveConfig(YamlConfiguration config, File file) {
         try {
-            YamlConfiguration.loadConfiguration(file)
-                             .save(file);
+            config.save(file);
         } catch (IOException e) {
-            System.out.println("foodclicker wtf @ saving file");
+            throw new UncheckedIOException("Unable to save player data file: " + file, e);
         }
     }
 }
