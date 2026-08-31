@@ -416,7 +416,7 @@ public class ClickingPlayer {
     }
 
     public void earn(double amount) {
-        getData().addMoney(new BigDecimal(amount));
+        getData().addMoney(BigDecimal.valueOf(amount));
     }
 
     public void earn(BigDecimal amount) {
@@ -424,7 +424,7 @@ public class ClickingPlayer {
     }
 
     public void pay(double amount) {
-        getData().removeMoney(new BigDecimal(amount));
+        getData().removeMoney(BigDecimal.valueOf(amount));
     }
 
     public void pay(BigDecimal amount) {
@@ -432,11 +432,15 @@ public class ClickingPlayer {
     }
 
     public boolean canAfford(double amount) {
-        return getData().getGeneralBigDecimals().get("money").min(BigDecimal.valueOf(amount)).equals(BigDecimal.valueOf(amount));
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), BigDecimal.valueOf(amount));
     }
 
     public boolean canAfford(BigDecimal amount) {
-        return getData().getGeneralBigDecimals().get("money").min(amount).equals(amount);
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), amount);
+    }
+
+    static boolean hasAtLeast(BigDecimal balance, BigDecimal amount) {
+        return balance.compareTo(amount) >= 0;
     }
 
     public void updateBuymodeButton(Inventory inv) {
