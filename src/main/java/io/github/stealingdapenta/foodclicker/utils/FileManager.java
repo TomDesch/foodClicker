@@ -24,7 +24,8 @@ public class FileManager {
     private final ConcurrentHashMap<String, Object> locks = new ConcurrentHashMap<>();
 
     private FileManager() {
-        this(() -> FoodClicker.getInstance().getDataFolder());
+        File folder = FoodClicker.getInstance().getDataFolder();
+        this.dataFolderSupplier = () -> folder;
     }
 
     FileManager(Supplier<File> dataFolderSupplier) {
