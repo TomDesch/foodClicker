@@ -1,53 +1,34 @@
 package io.github.stealingdapenta.foodclicker.clickingplayers;
 
-import static org.junit.jupiter.api.Assertions.assertEquals;
-import static org.mockito.Mockito.inOrder;
-import static org.mockito.Mockito.doThrow;
-import static org.mockito.Mockito.verify;
+import static org.junit.jupiter.api.Assertions.*;
+import static org.mockito.Mockito.*;
 
-import java.io.IOException;
-import java.io.UncheckedIOException;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 import org.junit.jupiter.api.Test;
-import org.mockito.InOrder;
-import org.mockito.Mockito;
 
 class SessionShutdownTest {
 
     @Test
-    void shutsDownReadyAndLoadingSessions() {
-        ClickingPlayer readySession = Mockito.mock(ClickingPlayer.class);
-        ClickingPlayer loadingSession = Mockito.mock(ClickingPlayer.class);
+    void queuesEverySessionEvenIfOneSnapshotFails() {
+        ClickingPlayer failing = mock(ClickingPlayer.class);
+        ClickingPlayer loading = mock(ClickingPlayer.class);
+        when(failing.shutdownAndSave()).thenThrow(new IllegalStateException("cannot snapshot"));
+        when(loading.shutdownAndSave()).thenReturn(CompletableFuture.completedFuture(null));
 
-        List<RuntimeException> failures = SessionShutdown.shutdownSessions(List.of(readySession, loadingSession));
+        List<CompletableFuture<Void>> results = SessionShutdown.shutdownSessions(List.of(failing, loading));
 
-        verify(readySession).shutdownAndSave();
-        verify(loadingSession).shutdownAndSave();
-        assertEquals(0, failures.size());
+        assertTrue(results.get(0).isCompletedExceptionally());
+        assertFalse(results.get(1).isCompletedExceptionally());
+        verify(loading).shutdownAndSave();
     }
 
     @Test
-    void removesSessionOnlyAfterItsDataIsSaved() {
-        ClickingPlayer session = Mockito.mock(ClickingPlayer.class);
-        Runnable removeSession = Mockito.mock(Runnable.class);
-
-        SessionShutdown.saveThenRemove(session, removeSession);
-
-        InOrder order = inOrder(session, removeSession);
-        order.verify(session).shutdownAndSave();
-        order.verify(removeSession).run();
-    }
-
-    @Test
-    void continuesShutdownAfterOneSessionCannotBeSaved() {
-        ClickingPlayer failingSession = Mockito.mock(ClickingPlayer.class);
-        ClickingPlayer nextSession = Mockito.mock(ClickingPlayer.class);
-        UncheckedIOException failure = new UncheckedIOException(new IOException("disk full"));
-        doThrow(failure).when(failingSession).shutdownAndSave();
-
-        List<RuntimeException> failures = SessionShutdown.shutdownSessions(List.of(failingSession, nextSession));
-
-        verify(nextSession).shutdownAndSave();
-        assertEquals(List.of(failure), failures);
+    void shutdownDoesNotWaitForWorkerCompletionsOnServerThread() {
+        ClickingPlayer session = mock(ClickingPlayer.class);
+        CompletableFuture<Void> pending = new CompletableFuture<>();
+        when(session.shutdownAndSave()).thenReturn(pending);
+        assertSame(pending, SessionShutdown.shutdownSessions(List.of(session)).getFirst());
+        assertFalse(pending.isDone());
     }
 }

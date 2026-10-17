@@ -4,26 +4,22 @@ import java.io.UncheckedIOException;
 import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
+import java.util.concurrent.CompletableFuture;
 
 public final class SessionShutdown {
 
     private SessionShutdown() {
     }
 
-    public static List<RuntimeException> shutdownSessions(Collection<ClickingPlayer> sessions) {
-        List<RuntimeException> failures = new ArrayList<>();
+    public static List<CompletableFuture<Void>> shutdownSessions(Collection<ClickingPlayer> sessions) {
+        List<CompletableFuture<Void>> results = new ArrayList<>();
         for (ClickingPlayer session : sessions) {
             try {
-                session.shutdownAndSave();
+                results.add(session.shutdownAndSave());
             } catch (UncheckedIOException | IllegalStateException failure) {
-                failures.add(failure);
+                results.add(CompletableFuture.failedFuture(failure));
             }
         }
-        return failures;
-    }
-
-    public static void saveThenRemove(ClickingPlayer session, Runnable removeSession) {
-        session.shutdownAndSave();
-        removeSession.run();
+        return results;
     }
 }

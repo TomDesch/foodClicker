@@ -32,6 +32,8 @@ public class ClickingPlayerData {
     private final Map<PrestigeEnum, Integer> prestigeShopBonusses;
     private final ClickingPlayer cp;
     private boolean prestigeHead;
+    private YamlConfiguration loadedConfig;
+    private ActivityTime activityTime;
 
     public ClickingPlayerData(ClickingPlayer cp) {
         this(cp, FileManager.getInstance());
@@ -102,36 +104,8 @@ public class ClickingPlayerData {
         return prestigeHead;
     }
 
-    public long loadGameCloseDate() {
-        return fm.getLongByKey(getCp(), "gameCloseDate");
-    }
-
-    public void resetGameCloseTime() {
-        saveGameCloseTime(0);
-    }
-
-    public void saveGameCloseTime(long duration) {
-        fm.setLongByKey(getCp(), "gameCloseTime", duration);
-    }
-
-    public long loadGameCloseTime() {
-        return fm.getLongByKey(getCp(), "gameCloseTime");
-    }
-
-    public void saveGameCloseDate(long duration) {
-        fm.setLongByKey(getCp(), "gameCloseDate", duration);
-    }
-
-    public long loadLoggedOutTime() {
-        return fm.getLongByKey(getCp(), "loggedOutTime");
-    }
-
-    public void saveLoggedOutTime(long duration) {
-        fm.setLongByKey(getCp(), "loggedOutTime", duration);
-    }
-
-    public void resetLoggedOutTime() {
-        saveLoggedOutTime(0);
+    ActivityTime getActivityTime() {
+        return activityTime;
     }
 
     public void doPrestigeHead() {
@@ -256,8 +230,9 @@ public class ClickingPlayerData {
         getGeneralBigDecimals().put("money", getGeneralBigDecimals().get("money").subtract(amount));
     }
 
-    public void loadEverythingFromFile() {
-        YamlConfiguration config = fm.getConfig(cp);
+    public void loadSnapshot(YamlConfiguration config) {
+        loadedConfig = config;
+        activityTime = new ActivityTime(config);
         loadSettings(config);
         loadBuildingsOwned(config);
         loadBuildingsMultipliers(config);
@@ -271,8 +246,14 @@ public class ClickingPlayerData {
         loadPrestigeBonuses(config);
     }
 
-    public void saveEverythingToFile() {
-        YamlConfiguration config = fm.getConfig(cp);
+    public String snapshot(String playerName) {
+        if (loadedConfig == null) {
+            throw new IllegalStateException("Cannot save an unloaded player");
+        }
+        YamlConfiguration config = new YamlConfiguration();
+        loadedConfig.getValues(false).forEach(config::set);
+        config.set("Player Name", playerName);
+        activityTime.write(config);
         saveSettings(config);
         saveBuildingsOwned(config);
         saveBuildingsMultipliers(config);
@@ -284,7 +265,7 @@ public class ClickingPlayerData {
         saveGeneralBigDecimalStats(config);
         saveAchievements(config);
         savePrestigeBonuses(config);
-        fm.saveConfig(cp, config);
+        return config.saveToString();
     }
 
     private void loadPrestigeBonuses(YamlConfiguration config) {
@@ -331,10 +312,6 @@ public class ClickingPlayerData {
         config.set("doBigNumbers", settings.isDoBigNumbers());
     }
 
-    public void loadUpgradesUnlocked() {
-        loadUpgradesUnlocked(fm.getConfig(cp));
-    }
-
     private void loadUpgradesUnlocked(YamlConfiguration config) {
         //todo expand with based on achievements
         for (UpgradesBasedOnStats upgradesBasedOnStats : UpgradesBasedOnStats.values()) {
@@ -345,20 +322,10 @@ public class ClickingPlayerData {
         }
     }
 
-    public void saveUpgradesUnlocked() {
-        YamlConfiguration config = fm.getConfig(cp);
-        saveUpgradesUnlocked(config);
-        fm.saveConfig(cp, config);
-    }
-
     private void saveUpgradesUnlocked(YamlConfiguration config) {
         for (Map.Entry<String, Boolean> entry : getUpgradesUnlocked().entrySet()) {
             config.set(entry.getKey(), entry.getValue());
         }
-    }
-
-    public void loadGeneralDoubleStats() {
-        loadGeneralDoubleStats(fm.getConfig(cp));
     }
 
     private void loadGeneralDoubleStats(YamlConfiguration config) {
@@ -367,20 +334,10 @@ public class ClickingPlayerData {
         getGeneralDoubleStats().put("eventChance", Math.max(config.getDouble("eventChance"), 0.17));
     }
 
-    public void saveGeneralDoubleStats() {
-        YamlConfiguration config = fm.getConfig(cp);
-        saveGeneralDoubleStats(config);
-        fm.saveConfig(cp, config);
-    }
-
     private void saveGeneralDoubleStats(YamlConfiguration config) {
         for (Map.Entry<String, Double> entry : getGeneralDoubleStats().entrySet()) {
             config.set(entry.getKey(), entry.getValue());
         }
-    }
-
-    public void loadGeneralBigDecimalStats() {
-        loadGeneralBigDecimalStats(fm.getConfig(cp));
     }
 
     private void loadGeneralBigDecimalStats(YamlConfiguration config) {
@@ -389,20 +346,10 @@ public class ClickingPlayerData {
         getGeneralBigDecimals().put("alltimeearnings", fm.getBigDecimalByKey(config, "alltimeearnings"));
     }
 
-    public void saveGeneralBigDecimalStats() {
-        YamlConfiguration config = fm.getConfig(cp);
-        saveGeneralBigDecimalStats(config);
-        fm.saveConfig(cp, config);
-    }
-
     private void saveGeneralBigDecimalStats(YamlConfiguration config) {
         for (Map.Entry<String, BigDecimal> entry : getGeneralBigDecimals().entrySet()) {
             config.set(entry.getKey(), entry.getValue().toPlainString());
         }
-    }
-
-    public void loadGeneralIntegerStats() {
-        loadGeneralIntegerStats(fm.getConfig(cp));
     }
 
     private void loadGeneralIntegerStats(YamlConfiguration config) {
@@ -414,12 +361,6 @@ public class ClickingPlayerData {
 
         getGeneralIntegerStats().put("Prestige level", config.getInt("Prestige level"));
         getGeneralIntegerStats().put("prestige coins", config.getInt("prestige coins"));
-    }
-
-    public void saveGeneralIntegerStats() {
-        YamlConfiguration config = fm.getConfig(cp);
-        saveGeneralIntegerStats(config);
-        fm.saveConfig(cp, config);
     }
 
     private void saveGeneralIntegerStats(YamlConfiguration config) {
@@ -554,6 +495,7 @@ public class ClickingPlayerData {
     }
 
     public void doPrestige() {
+        getCp().resetTransientEffects();
         int earningAmount = calculateAvailablePrestigeLevels();
         getGeneralIntegerStats().put("Prestige level", getCurrentPrestigeLevels() + earningAmount);
         getGeneralIntegerStats().put("prestige coins", getCurrentPrestigeCoins() + earningAmount);

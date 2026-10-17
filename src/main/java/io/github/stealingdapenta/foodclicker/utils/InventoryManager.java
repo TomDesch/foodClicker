@@ -1,15 +1,10 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
 import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.ACHIEVEMENTS_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.GAME_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.PREFERENCES_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.PRESTIGE_SHOP;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.SHOP_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.UPGRADES_GUI_TITLE_ADDENDUM;
 
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.basics.GameInventory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -17,18 +12,20 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
 public class InventoryManager {
 
     private static InventoryManager inventoryManager;
-    private final Map<Player, ClickingPlayer> clickingPlayerMap = new HashMap<>();
+    private final Map<UUID, ClickingPlayer> clickingPlayerMap = new HashMap<>();
 
     private InventoryManager() {
     }
@@ -40,7 +37,7 @@ public class InventoryManager {
         return inventoryManager;
     }
 
-    public Map<Player, ClickingPlayer> getClickingPlayerMap() {
+    public Map<UUID, ClickingPlayer> getClickingPlayerMap() {
         return clickingPlayerMap;
     }
 
@@ -108,32 +105,67 @@ public class InventoryManager {
     }
 
     public void openGUI(Inventory i, Player p) {
-        closeGUI(p);
-        Bukkit.getScheduler()
-              .runTaskLater(FoodClicker.getInstance(), () -> p.openInventory(i), 2L);
+        Bukkit.getScheduler().runTask(FoodClicker.getInstance(), () -> {
+            if (p.isOnline() && ownsInventory(i, p)) {
+                p.openInventory(i);
+            }
+        });
     }
 
     public boolean isPlayerInMap(Player p) {
-        return clickingPlayerMap.containsKey(p);
+        return clickingPlayerMap.containsKey(p.getUniqueId());
     }
 
     public void removePlayerFromMap(Player p) {
-        clickingPlayerMap.remove(p);
+        clickingPlayerMap.remove(p.getUniqueId());
     }
 
     public void addClickingPlayerToMap(ClickingPlayer cp) {
         Player p = cp.getPlayer();
-        if (isPlayerInMap(p)) {
-            removePlayerFromMap(p);
+        if (clickingPlayerMap.putIfAbsent(p.getUniqueId(), cp) != null) {
+            throw new IllegalStateException("Player already has a FoodClicker session");
         }
-        clickingPlayerMap.put(p, cp);
     }
 
-    public boolean inventoryIsFoodClicker(String invTitle, Player player) {
-        return invTitle.equals(player.getDisplayName() + GAME_GUI_TITLE_ADDENDUM) || invTitle.equals(
-                player.getDisplayName() + ACHIEVEMENTS_GUI_TITLE_ADDENDUM) || invTitle.equals(player.getDisplayName() + PREFERENCES_GUI_TITLE_ADDENDUM)
-                || invTitle.equals(player.getDisplayName() + SHOP_GUI_TITLE_ADDENDUM) || invTitle.equals(
-                player.getDisplayName() + UPGRADES_GUI_TITLE_ADDENDUM) || invTitle.equals(player.getDisplayName() + PRESTIGE_SHOP);
+    public boolean isCurrent(ClickingPlayer session) {
+        return clickingPlayerMap.get(session.getPlayerId()) == session;
+    }
+
+    public void remove(ClickingPlayer session) {
+        clickingPlayerMap.remove(session.getPlayerId(), session);
+    }
+
+    public void connect(Player player) {
+        ClickingPlayer previous = clickingPlayerMap.get(player.getUniqueId());
+        if (previous == null) {
+            addClickingPlayerToMap(new ClickingPlayer(player));
+        } else if (previous.getPlayer() != player) {
+            FoodClicker plugin = FoodClicker.getInstance();
+            previous.shutdownAndSave().whenComplete((ignored, failure) ->
+                    plugin.onServerThread(() -> {
+                        if (failure == null) {
+                            remove(previous);
+                            if (player.isOnline() && !isPlayerInMap(player)) {
+                                addClickingPlayerToMap(new ClickingPlayer(player));
+                            }
+                        } else if (failure != null && player.isOnline()) {
+                            player.sendMessage("FoodClicker: Your previous session could not be saved. Use /foodclicker to retry.");
+                        }
+                    }));
+        }
+    }
+
+    public boolean inventoryIsFoodClicker(InventoryView view, Player player) {
+        return ownsInventory(view.getTopInventory(), player);
+    }
+
+    public boolean ownsInventory(Inventory inventory, Player player) {
+        if (!(inventory.getHolder() instanceof GameInventory holder)) {
+            return false;
+        }
+        ClickingPlayer session = holder.getSession();
+        return session.getPlayer() == player && isCurrent(session) && session.isReady() && session.isGameOpen()
+                && session.getGui() != null && session.getGui().getGameWindow() == inventory;
     }
 
     public String makeNumbersPretty(double d) {

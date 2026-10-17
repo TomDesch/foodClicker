@@ -1,139 +1,108 @@
 package io.github.stealingdapenta.foodclicker.commands;
 
-import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.LOCALLEADERBOARD;
 import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
 
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum;
 import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
-import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.io.File;
 import java.math.BigDecimal;
+import java.util.ArrayList;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.LinkedHashMap;
+import java.util.List;
 import java.util.Map;
+import java.util.UUID;
+import java.util.function.Consumer;
 import java.util.stream.Collectors;
 import org.bukkit.Bukkit;
 import org.bukkit.command.Command;
 import org.bukkit.command.CommandExecutor;
 import org.bukkit.command.CommandSender;
-import org.bukkit.command.ConsoleCommandSender;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 
 public class TopCommand implements CommandExecutor {
-    private static final InventoryManager im = InventoryManager.getInstance();
-    private static final FileManager fm = FileManager.getInstance();
+
     private final AntiSpamManager asm = AntiSpamManager.getInstance();
 
-
-    private BigDecimal getBigDecimalMoney(YamlConfiguration config) {
-        String bigString = config.getString("alltimeearnings");
-        if (bigString == null || bigString.equals("0")) return new BigDecimal(0);
-        return new BigDecimal(bigString);
+    record Entry(UUID id, String name, BigDecimal earnings) {
     }
 
-    private String getPlayerName(YamlConfiguration config) {
-        return config.getString("Player Name");
+    static Map<String, BigDecimal> sortByValue(Map<String, BigDecimal> values) {
+        return values.entrySet().stream()
+                     .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
+                     .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
+                                               (oldValue, newValue) -> oldValue, LinkedHashMap::new));
     }
 
-    private boolean containsNameAndMoney(YamlConfiguration config) {
-        return (config.contains("Player Name") && config.contains("alltimeearnings"));
-    }
-
-    static Map<String, BigDecimal> sortByValue(Map<String, BigDecimal> unsortMap) {
-        return unsortMap.entrySet().stream()
-                        .sorted(Map.Entry.comparingByValue(Comparator.reverseOrder()))
-                        .collect(Collectors.toMap(Map.Entry::getKey, Map.Entry::getValue,
-                                                  (oldValue, newValue) -> oldValue, LinkedHashMap::new));
+    static List<Entry> readLeaderboard(FileManager files, Map<UUID, String> currentNames, Consumer<String> invalid) {
+        File[] playerFiles = files.getUserFiles().listFiles((directory, name) -> name.endsWith(".yml"));
+        if (playerFiles == null) {
+            throw new IllegalStateException("Unable to list player files");
+        }
+        List<Entry> entries = new ArrayList<>();
+        for (File file : playerFiles) {
+            try {
+                UUID id = UUID.fromString(file.getName().substring(0, file.getName().length() - 4));
+                YamlConfiguration config = files.readFile(file);
+                if (config.contains("alltimeearnings")) {
+                    entries.add(new Entry(id, currentNames.getOrDefault(id, config.getString("Player Name", id.toString())),
+                                          files.getBigDecimalByKey(config, "alltimeearnings")));
+                }
+            } catch (RuntimeException failure) {
+                invalid.accept(file.getName());
+            }
+        }
+        return entries.stream().sorted(Comparator.comparing(Entry::earnings).reversed().thenComparing(Entry::id)).toList();
     }
 
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-        if (sender instanceof ConsoleCommandSender) return true;
-        Player p = (Player) sender;
-        ClickingPlayer cp;
-        boolean temporarySession;
-
-
-        if (asm.playerIsSpamming(p)) {
-            asm.sendSpamWarning(p);
+        if (!(sender instanceof Player player)) {
+            sender.sendMessage("FoodClicker: This command is only available to players.");
             return true;
         }
-
-        asm.addPossibleSpammer(p);
-
-        if (im.isPlayerInMap(p)) {
-            cp = im.getClickingPlayerMap().get(p);
-            temporarySession = false;
-        } else {
-            cp = new ClickingPlayer(p);
-            temporarySession = true;
+        if (asm.playerIsSpamming(player)) {
+            asm.sendSpamWarning(player);
+            return true;
         }
-
-        p.sendMessage(ItemBuilder.colorStatic("&6[&bFoodClicker&6] &ePlease wait while we load the data."));
-
-        cp.runWhenReady(() -> {
-            if (LOCALLEADERBOARD.getAmountOwned(cp) < 1) {
-                p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eYou have not unlocked this prestige command yet."));
-                cancelTemporarySession(cp, temporarySession);
+        asm.addPossibleSpammer(player);
+        FoodClicker plugin = FoodClicker.getInstance();
+        PlayerSnapshots.read(plugin, player, config -> {
+            if (config.getInt(PrestigeEnum.LOCALLEADERBOARD.getKey()) < 1) {
+                player.sendMessage("FoodClicker: You have not unlocked this prestige command yet.");
                 return;
             }
-
-            Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-                Map<String, BigDecimal> allData = new HashMap<>();
-                File[] files = fm.getUserFiles().listFiles();
-
-                if (files != null) {
-                    for (File file : files) {
-                        YamlConfiguration config = YamlConfiguration.loadConfiguration(file);
-
-                        if (containsNameAndMoney(config)) {
-                            allData.put(getPlayerName(config), getBigDecimalMoney(config));
-                        }
-                    }
-
-                    Map<String, BigDecimal> sortedData = sortByValue(allData);
-                    Bukkit.getScheduler().runTask(
-                            FoodClicker.getInstance(),
-                            () -> sendLeaderboard(p, cp, sortedData, temporarySession)
-                    );
-                } else {
-                    Bukkit.getScheduler().runTask(FoodClicker.getInstance(), () -> {
-                        p.sendMessage(colorStatic("&6[&bFoodClicker&6] &eUnable to read leaderboard data."));
-                        cancelTemporarySession(cp, temporarySession);
-                    });
-                }
-            });
-        });
-
-        return true;
-    }
-
-    private void sendLeaderboard(Player player, ClickingPlayer cp, Map<String, BigDecimal> sortedData, boolean temporarySession) {
-        player.sendMessage(colorStatic("&6-------------------------------"));
-        player.sendMessage(colorStatic("&6[&bFoodClicker&6] &eTop 10 richest people:"));
-        player.sendMessage(colorStatic("&7&o          (All time earnings)"));
-
-        int index = 1;
-
-        for (Map.Entry<String, BigDecimal> entry : sortedData.entrySet()) {
-            player.sendMessage(colorStatic("&6" + index + ". &e" + entry.getKey() + " &6- &b" + im.truncateNumber(entry.getValue())));
-            index++;
-
-            if (index > 10) {
-                break;
+            Map<UUID, String> names = new HashMap<>();
+            for (Player online : Bukkit.getOnlinePlayers()) {
+                names.put(online.getUniqueId(), online.getName());
             }
-        }
-
-        player.sendMessage(colorStatic("&6-------------------------------"));
-        cancelTemporarySession(cp, temporarySession);
-    }
-
-    private void cancelTemporarySession(ClickingPlayer cp, boolean temporarySession) {
-        if (temporarySession) {
-            cp.getRepeatingClickerTask().cancel();
-        }
+            InventoryManager inventories = InventoryManager.getInstance();
+            UUID requester = player.getUniqueId();
+            ClickingPlayer session = inventories.getClickingPlayerMap().get(requester);
+            FileManager files = FileManager.getInstance();
+            plugin.getPersistence().submit(() -> readLeaderboard(files, names,
+                    name -> plugin.getLogger().warning("Skipping invalid leaderboard record " + name)))
+                  .whenComplete((entries, failure) -> plugin.onServerThread(() -> {
+                      if (!player.isOnline() || inventories.getClickingPlayerMap().get(requester) != session) {
+                          return;
+                      }
+                      if (failure != null) {
+                          plugin.getLogger().warning("Unable to read leaderboard: " + failure.getMessage());
+                          player.sendMessage("FoodClicker: Unable to read leaderboard data.");
+                          return;
+                      }
+                      player.sendMessage(colorStatic("&6[&bFoodClicker&6] &eTop 10 all time earnings:"));
+                      for (int index = 0; index < Math.min(10, entries.size()); index++) {
+                          Entry entry = entries.get(index);
+                          player.sendMessage(colorStatic("&6" + (index + 1) + ". &e" + entry.name() + " &6- &b"
+                                  + inventories.truncateNumber(entry.earnings())));
+                      }
+                  }));
+        });
+        return true;
     }
 }

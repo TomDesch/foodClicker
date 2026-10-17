@@ -17,4 +17,9 @@ commands:
     usage: /<command>
   fcfirework:
     description: Admin command to summon fireworks.
-    usage: /<command> <player> <size>
+    usage: /<command> <player> <amount> <size>
+
+permissions:
+  foodclicker.firework:
+    description: Spawn fireworks with the administrator command.
+    default: op
