@@ -128,6 +128,10 @@ public class ClickingPlayer {
         return gameOpen && !disconnected;
     }
 
+    public boolean isDisconnected() {
+        return disconnected;
+    }
+
     public ArrayList<Clickable> getActiveEvents() {
         return activeEvents;
     }

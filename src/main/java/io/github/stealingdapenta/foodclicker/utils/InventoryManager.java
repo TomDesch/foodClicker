@@ -139,7 +139,7 @@ public class InventoryManager {
         ClickingPlayer previous = clickingPlayerMap.get(player.getUniqueId());
         if (previous == null) {
             addClickingPlayerToMap(new ClickingPlayer(player));
-        } else if (previous.getPlayer() != player) {
+        } else if (previous.getPlayer() != player || previous.isDisconnected()) {
             FoodClicker plugin = FoodClicker.getInstance();
             previous.shutdownAndSave().whenComplete((ignored, failure) ->
                     plugin.onServerThread(() -> {

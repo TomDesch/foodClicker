@@ -118,6 +118,23 @@ class ClickingPlayerLifecycleTest {
     }
 
     @Test
+    void retiredSessionCanBeRecoveredEvenIfThePlayerHandleIsReused() {
+        try (SessionFixture fixture = new SessionFixture(directory)) {
+            ClickingPlayer previous = fixture.connect();
+            fixture.finishIo();
+            previous.getData().getGeneralBigDecimals().put("money", new BigDecimal("88"));
+            previous.shutdownAndSave();
+            InventoryManager.getInstance().connect(fixture.player);
+            fixture.finishIo();
+            fixture.finishIo();
+            ClickingPlayer current = InventoryManager.getInstance().getClickingPlayerMap().get(fixture.player.getUniqueId());
+            assertNotSame(previous, current);
+            assertTrue(current.isReady());
+            assertEquals(new BigDecimal("88"), current.getData().getGeneralBigDecimals().get("money"));
+        }
+    }
+
+    @Test
     void disconnectDuringLoadAccountsConnectionOnceWithoutWritingIncompleteGameplayState() {
         try (SessionFixture fixture = new SessionFixture(directory)) {
             fixture.files.save(fixture.player.getUniqueId(), "money: '42'\nloggedOutDate: 900");
