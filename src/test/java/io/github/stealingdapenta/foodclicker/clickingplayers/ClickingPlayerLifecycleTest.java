@@ -12,6 +12,8 @@ import java.math.BigDecimal;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.concurrent.atomic.AtomicBoolean;
+import java.util.concurrent.atomic.AtomicLong;
+import java.util.UUID;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -66,7 +68,7 @@ class ClickingPlayerLifecycleTest {
             fixture.finishIo();
             cp.openGame();
             cp.getData().getGeneralBigDecimals().put("money", new BigDecimal("100"));
-            java.util.UUID playerId = fixture.player.getUniqueId();
+            UUID playerId = fixture.player.getUniqueId();
             doThrow(new UncheckedIOException(new IOException("disk full")))
                     .when(fixture.files).save(eq(playerId), anyString());
             cp.closeGame();
@@ -98,7 +100,7 @@ class ClickingPlayerLifecycleTest {
             first.getData().getGeneralBigDecimals().put("money", new BigDecimal("123"));
             first.shutdownAndSave();
             Player reconnected = mock(Player.class);
-            java.util.UUID playerId = fixture.player.getUniqueId();
+            UUID playerId = fixture.player.getUniqueId();
             when(reconnected.getUniqueId()).thenReturn(playerId);
             when(reconnected.getName()).thenReturn("Renamed");
             when(reconnected.isOnline()).thenReturn(true);
@@ -116,16 +118,24 @@ class ClickingPlayerLifecycleTest {
     }
 
     @Test
-    void disconnectDuringLoadCannotCompleteQueuedGuiOpenOrOverwriteFile() {
+    void disconnectDuringLoadAccountsConnectionOnceWithoutWritingIncompleteGameplayState() {
         try (SessionFixture fixture = new SessionFixture(directory)) {
-            ClickingPlayer cp = fixture.connect();
+            fixture.files.save(fixture.player.getUniqueId(), "money: '42'\nloggedOutDate: 900");
+            AtomicLong clock = new AtomicLong(1000);
+            ClickingPlayer cp = new ClickingPlayer(fixture.player, clock::get);
+            InventoryManager.getInstance().addClickingPlayerToMap(cp);
             AtomicBoolean ran = new AtomicBoolean();
             cp.runWhenReady(() -> ran.set(true));
+            clock.set(1020);
+            cp.shutdownAndSave();
             cp.shutdownAndSave();
             fixture.finishIo();
             assertFalse(ran.get());
             assertNull(cp.getGui());
-            verify(fixture.files, never()).save(any(), anyString());
+            assertEquals("42", fixture.files.read(cp.getPlayerId()).getString("money"));
+            assertEquals(20, fixture.files.read(cp.getPlayerId()).getLong("gameCloseTime"));
+            assertEquals(100, fixture.files.read(cp.getPlayerId()).getLong("loggedOutTime"));
+            assertFalse(fixture.files.read(cp.getPlayerId()).contains("cookie"));
         }
     }
 }

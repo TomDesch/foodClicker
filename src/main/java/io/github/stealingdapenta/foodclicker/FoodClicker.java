@@ -78,6 +78,9 @@ public class FoodClicker extends JavaPlugin {
     public void onDisable() {
         InventoryManager inventoryManager = InventoryManager.getInstance();
         stopping = true;
+        if (persistence != null) {
+            persistence.beginShutdown(Duration.ofSeconds(30));
+        }
         SessionShutdown.shutdownSessions(new ArrayList<>(inventoryManager.getClickingPlayerMap().values()))
                        .forEach(result -> result.whenComplete((ignored, failure) -> {
                            if (failure != null) {

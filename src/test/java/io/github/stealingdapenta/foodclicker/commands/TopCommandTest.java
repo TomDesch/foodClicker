@@ -9,6 +9,7 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.ArrayList;
 import java.nio.file.Path;
+import java.nio.file.Files;
 import io.github.stealingdapenta.foodclicker.utils.SessionFixture;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.io.TempDir;
@@ -19,7 +20,7 @@ class TopCommandTest {
     Path directory;
 
     @Test
-    void invalidDecimalIsSkippedWhileDuplicateNamesKeepDistinctUuidEntriesAndNamesRefresh() {
+    void invalidDecimalIsSkippedWhileDuplicateNamesKeepDistinctUuidEntriesAndNamesRefresh() throws Exception {
         try (SessionFixture fixture = new SessionFixture(directory)) {
             UUID first = UUID.randomUUID();
             UUID second = UUID.randomUUID();
@@ -36,7 +37,8 @@ class TopCommandTest {
             assertEquals("Renamed", entries.get(0).name());
             assertEquals(second, entries.get(1).id());
             assertEquals(List.of(invalid + ".yml"), warnings);
-            assertEquals("invalid", fixture.files.read(invalid).getString("alltimeearnings"));
+            assertEquals("Player Name: Bad\nalltimeearnings: invalid\n",
+                         Files.readString(fixture.files.getUserFiles().toPath().resolve(invalid + ".yml")));
         }
     }
 

@@ -84,6 +84,8 @@ public class ClickingPlayer {
     private boolean gameOpen;
     private String pendingSnapshot;
     private CompletableFuture<Void> saveFuture;
+    private long disconnectedAt;
+    private String loadingSnapshot;
     private RepeatingClickerTask repeatingClickerTask;
     private RepeatingClickerTask purchaseTask;
     private final Map<Clickable, BukkitTask> boostTasks = new HashMap<>();
@@ -203,8 +205,31 @@ public class ClickingPlayer {
         requireServerThread();
         if (!isReady()) {
             initializationGate.cancel();
-            im.remove(this);
-            return CompletableFuture.completedFuture(null);
+            if (!disconnected) {
+                disconnected = true;
+                disconnectedAt = now();
+            }
+            FileManager files = FileManager.getInstance();
+            long logout = disconnectedAt;
+            saveFuture = plugin.getPersistence().submit(() -> {
+                // No gameplay state was applied. Preserve the loaded file and account only for this connection.
+                if (loadingSnapshot == null) {
+                    YamlConfiguration config = files.read(playerId);
+                    ActivityTime activity = new ActivityTime(config);
+                    activity.join(joinedAt);
+                    activity.disconnect(logout);
+                    activity.write(config);
+                    config.set("Player Name", playerName);
+                    loadingSnapshot = config.saveToString();
+                }
+                files.save(playerId, loadingSnapshot);
+                return (Void) null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure != null) {
+                    plugin.getLogger().log(Level.SEVERE, "Unable to save a disconnected loading session; retained for retry", failure);
+                }
+            });
+            return saveFuture;
         }
         if (!disconnected) {
             disconnected = true;

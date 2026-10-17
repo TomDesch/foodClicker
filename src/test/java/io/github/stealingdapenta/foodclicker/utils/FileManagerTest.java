@@ -12,6 +12,7 @@ import java.io.UncheckedIOException;
 import java.nio.file.Files;
 import java.nio.file.Path;
 import java.util.UUID;
+import java.util.stream.Stream;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.entity.Player;
 import org.junit.jupiter.api.Test;
@@ -60,6 +61,19 @@ class FileManagerTest {
     }
 
     @Test
+    void malformedDecimalCannotBeReplacedByDefaultsOrConnectionUpdates() throws IOException {
+        FileManager manager = new FileManager(() -> temporaryDirectory.toFile());
+        UUID id = UUID.randomUUID();
+        Path file = manager.getUserFiles().toPath().resolve(id + ".yml");
+        String original = "money: invalid\ncookie: 100\n";
+        Files.writeString(file, original);
+        assertThrows(IllegalStateException.class, () -> manager.read(id));
+        assertThrows(IllegalStateException.class, () -> manager.update(id, config -> config.set("loggedOutDate", 100)));
+        assertThrows(IllegalStateException.class, () -> manager.save(id, "money: '0'"));
+        assertEquals(original, Files.readString(file));
+    }
+
+    @Test
     void failedAtomicReplacementPreservesOriginalAndCleansPendingFile() throws IOException {
         FileManager manager = new FileManager(() -> temporaryDirectory.toFile()) {
             @Override
@@ -73,7 +87,7 @@ class FileManagerTest {
 
         assertThrows(UncheckedIOException.class, () -> manager.save(id, "money: '0'"));
         assertEquals("money: '500'\n", Files.readString(file));
-        try (java.util.stream.Stream<Path> files = Files.list(file.getParent())) {
+        try (Stream<Path> files = Files.list(file.getParent())) {
             assertEquals(1, files.count());
         }
     }

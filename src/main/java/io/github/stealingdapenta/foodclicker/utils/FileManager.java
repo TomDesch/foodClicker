@@ -138,7 +138,7 @@ public class FileManager {
 
     public File getUserFiles() {
         File userFiles = new File(dataFolderSupplier.get(), "foodclicker");
-        if (!userFiles.isDirectory() && !userFiles.mkdirs()) {
+        if (!userFiles.isDirectory() && !userFiles.mkdirs() && !userFiles.isDirectory()) {
             throw new IllegalStateException("Unable to create player data directory: " + userFiles);
         }
         return userFiles;
@@ -178,11 +178,14 @@ public class FileManager {
 
     private YamlConfiguration strictRead(File file) {
         YamlConfiguration config = new YamlConfiguration();
-        if (!Files.exists(file.toPath())) {
+        if (Files.notExists(file.toPath())) {
             return config;
         }
         try {
             config.load(file);
+            for (String key : new String[]{"money", "legacy earnings", "alltimeearnings"}) {
+                getBigDecimalByKey(config, key);
+            }
             return config;
         } catch (IOException e) {
             throw new UncheckedIOException("Unable to read player data file: " + file, e);

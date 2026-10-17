@@ -6,8 +6,11 @@ import java.time.Duration;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.CompletableFuture;
+import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
+import java.util.concurrent.atomic.AtomicReference;
+import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
 
 class PlayerPersistenceTest {
@@ -28,7 +31,7 @@ class PlayerPersistenceTest {
             }
             CompletableFuture<List<Integer>> read = persistence.submit(() -> List.copyOf(writes));
             assertTrue(persistence.drain(Duration.ofSeconds(5)));
-            assertEquals(java.util.stream.IntStream.range(0, 20).boxed().toList(), read.join());
+            assertEquals(IntStream.range(0, 20).boxed().toList(), read.join());
             assertTrue(persistence.submit(() -> null).isCompletedExceptionally());
         } finally {
             persistence.drain(Duration.ofSeconds(5));
@@ -44,7 +47,7 @@ class PlayerPersistenceTest {
             CompletableFuture<Void> failed = persistence.submit(() -> {
                 throw new IllegalStateException("disk failed");
             });
-            assertThrows(java.util.concurrent.CompletionException.class, failed::join);
+            assertThrows(CompletionException.class, failed::join);
             persistence.submit(() -> {
                 started.countDown();
                 try {
@@ -64,5 +67,48 @@ class PlayerPersistenceTest {
             release.countDown();
             assertTrue(persistence.drain(Duration.ofSeconds(5)));
         }
+    }
+
+    @Test
+    void finalShutdownSnapshotsWaitForCapacityInsteadOfBeingDroppedByAFullQueue() throws Exception {
+            PlayerPersistence persistence = new PlayerPersistence();
+            CountDownLatch started = new CountDownLatch(1);
+            CountDownLatch release = new CountDownLatch(1);
+            CountDownLatch submitting = new CountDownLatch(1);
+            CountDownLatch returned = new CountDownLatch(1);
+            AtomicReference<CompletableFuture<String>> finalWrite = new AtomicReference<>();
+            Thread submitter = new Thread(() -> {
+                submitting.countDown();
+                finalWrite.set(persistence.submit(() -> "saved"));
+                returned.countDown();
+            });
+            try {
+                persistence.submit(() -> {
+                    started.countDown();
+                    try {
+                        assertTrue(release.await(5, TimeUnit.SECONDS));
+                    } catch (InterruptedException failure) {
+                        throw new IllegalStateException(failure);
+                    }
+                    return null;
+                });
+                assertTrue(started.await(5, TimeUnit.SECONDS));
+                for (int index = 0; index < 256; index++) {
+                    persistence.submit(() -> null);
+                }
+                persistence.beginShutdown(Duration.ofSeconds(5));
+                submitter.start();
+                assertTrue(submitting.await(5, TimeUnit.SECONDS));
+                assertFalse(returned.await(100, TimeUnit.MILLISECONDS));
+                release.countDown();
+                submitter.join(5000);
+                assertFalse(submitter.isAlive());
+                assertTrue(persistence.drain(Duration.ofSeconds(5)));
+                assertEquals("saved", finalWrite.get().join());
+            } finally {
+                release.countDown();
+                persistence.drain(Duration.ofSeconds(5));
+                submitter.join(5000);
+            }
     }
 }

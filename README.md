@@ -19,7 +19,7 @@ Copy `target\FoodClicker-3.0.0.jar` into the server's `plugins` directory and re
 
 Player YAML files live in `plugins\FoodClicker\foodclicker`, keyed by UUID. Settings and progression are loaded and saved through an ordered background queue. Statistics and leaderboard commands never start a game or collect AFK income.
 
-Closing the game saves a snapshot; disconnect and server stop also save. Online idle time and offline time are counted separately, excluding active play. Temporary boosts and buy-max tasks stop when the game closes or prestige resets progression.
+Closing the game saves a snapshot; disconnect and server stop also save. A disconnect during initial loading preserves the stored progression and records only the connection's time boundaries. Online idle time and offline time are counted separately, excluding active play. Temporary boosts and buy-max tasks stop when the game closes or prestige resets progression.
 
 A failed load does not create an empty replacement file. Repair the affected YAML and retry `/foodclicker`. A failed save keeps the session in memory and prevents reopening or replacing it until a retry succeeds. Use `/foodclicker` to retry and check the server log before restarting after any storage failure. Unsupported atomic file replacement fails safely rather than risking the previous file.
 
