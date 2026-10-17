@@ -27,7 +27,7 @@ public class FoodClickerCommand implements CommandExecutor {
 
         im.connect(p);
         ClickingPlayer cp = im.getClickingPlayerMap().get(p.getUniqueId());
-        if (cp != null && cp.getPlayer() == p) {
+        if (cp != null && cp.getPlayer() == p && !cp.isDisconnected()) {
             cp.runWhenReady(cp::openGame);
         } else {
             p.sendMessage("FoodClicker: Recovering your previous session. Use /foodclicker again when it has saved.");
