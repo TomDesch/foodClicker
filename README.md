@@ -23,6 +23,8 @@ Closing the game saves a snapshot; disconnect and server stop also save. A disco
 
 A failed load does not create an empty replacement file. Repair the affected YAML and retry `/foodclicker`. A failed save keeps the session in memory and prevents reopening or replacing it until a retry succeeds. Use `/foodclicker` to retry and check the server log before restarting after any storage failure. Unsupported atomic file replacement fails safely rather than risking the previous file.
 
+Shutdown waits up to 30 seconds for the data queue. On timeout, unfinished operations report failure and cancellation is requested. A blocked filesystem write may still finish; re-enabling the plugin is refused until the old worker actually exits, so it cannot overwrite a newer session's save.
+
 Back up player data before upgrading. Stop the server before editing files.
 
 ## Validation

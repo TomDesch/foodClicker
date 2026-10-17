@@ -3,17 +3,92 @@ package io.github.stealingdapenta.foodclicker.utils;
 import static org.junit.jupiter.api.Assertions.*;
 
 import java.time.Duration;
+import java.nio.file.Path;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.CompletionException;
 import java.util.concurrent.CountDownLatch;
 import java.util.concurrent.TimeUnit;
 import java.util.concurrent.atomic.AtomicReference;
+import java.util.concurrent.atomic.AtomicBoolean;
 import java.util.stream.IntStream;
 import org.junit.jupiter.api.Test;
+import org.junit.jupiter.api.io.TempDir;
+import org.junit.jupiter.params.ParameterizedTest;
+import org.junit.jupiter.params.provider.ValueSource;
 
 class PlayerPersistenceTest {
+
+    @TempDir
+    Path directory;
+
+    @ParameterizedTest
+    @ValueSource(booleans = {false, true})
+    void failedDrainBlocksReplacementUntilEvenUninterruptibleFileWorkHasFinished(boolean interruptDrain) throws Exception {
+        CountDownLatch moving = new CountDownLatch(1);
+        CountDownLatch release = new CountDownLatch(1);
+        AtomicBoolean interrupted = new AtomicBoolean();
+        FileManager files = new FileManager(directory::toFile) {
+            @Override
+            void replace(Path source, Path destination) throws IOException {
+                moving.countDown();
+                boolean finished = false;
+                while (!finished) {
+                    try {
+                        finished = release.await(5, TimeUnit.SECONDS);
+                    } catch (InterruptedException failure) {
+                        interrupted.set(true);
+                    }
+                }
+                super.replace(source, destination);
+            }
+        };
+        UUID id = UUID.randomUUID();
+        PlayerPersistence old = new PlayerPersistence();
+        AtomicBoolean queuedRan = new AtomicBoolean();
+        try {
+            CompletableFuture<Void> write = old.submit(() -> {
+                files.save(id, "money: '10'");
+                return null;
+            });
+            assertTrue(moving.await(5, TimeUnit.SECONDS));
+            CompletableFuture<Void> queued = old.submit(() -> {
+                queuedRan.set(true);
+                return null;
+            });
+            if (interruptDrain) {
+                Thread.currentThread().interrupt();
+            }
+            boolean drained = old.drain(Duration.ZERO);
+            boolean drainInterrupted = Thread.interrupted();
+            assertFalse(drained);
+            assertEquals(interruptDrain, drainInterrupted);
+            assertThrows(IllegalStateException.class, PlayerPersistence::new);
+            assertTrue(write.isCompletedExceptionally());
+            assertTrue(queued.isCompletedExceptionally());
+            assertTrue(old.submit(() -> null).isCompletedExceptionally());
+            release.countDown();
+            assertTrue(old.drain(Duration.ofSeconds(5)));
+            assertTrue(interrupted.get());
+            assertFalse(queuedRan.get());
+            PlayerPersistence replacement = new PlayerPersistence();
+            try {
+                replacement.submit(() -> {
+                    files.save(id, "money: '20'");
+                    return null;
+                }).join();
+                assertEquals("20", files.read(id).getString("money"));
+            } finally {
+                assertTrue(replacement.drain(Duration.ofSeconds(5)));
+            }
+        } finally {
+            release.countDown();
+            assertTrue(old.drain(Duration.ofSeconds(5)));
+        }
+    }
 
     @Test
     void writesAndReadsAreOrderedOffCallerThreadAndDrainNeedsNoMainCallback() {

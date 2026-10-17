@@ -53,9 +53,10 @@ public class FoodClicker extends JavaPlugin {
 
     @Override
     public void onEnable() {
+        persistence = new PlayerPersistence();
+        stopping = false;
         instance = this;
         LOGGER = getInstance().getLogger();
-        persistence = new PlayerPersistence();
 
         Objects.requireNonNull(this.getCommand("foodclicker"))
                .setExecutor(new FoodClickerCommand());
@@ -88,7 +89,7 @@ public class FoodClicker extends JavaPlugin {
                            }
                        }));
         if (persistence != null && !persistence.drain(Duration.ofSeconds(30))) {
-            getLogger().severe("Player data queue did not finish within 30 seconds; pending writes are still running.");
+            getLogger().severe("Player data queue did not finish within 30 seconds; unfinished results failed and worker cancellation was requested. Re-enable is blocked until that worker exits.");
         }
         inventoryManager.getClickingPlayerMap().clear();
         getLogger().info("FoodClicker: Thank you for playing. Goodbye!");
