@@ -228,6 +228,7 @@ public enum AchievementsEnum {
     public void unlock(ClickingPlayer cp) {
         if (!unlocked(cp)) {
             cp.getData().getAchievements().put(getAchievement(), true);
+            cp.setIncomePerSecond(cp.calculateTotalIncomePerSecond());
             cp.doSoundEffect(4);
             cp.doFireWorks(5, 0);
             cp.doFireWorks(5, 1);

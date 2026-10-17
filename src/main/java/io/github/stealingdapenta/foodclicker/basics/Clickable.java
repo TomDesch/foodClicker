@@ -30,7 +30,13 @@ public class Clickable {
     }
 
     private ItemStack createItemStack(ClickingPlayer cp) {
-        if (bonus.getBoostDuration(cp) == -1) {
+        if (bonus.getEffectType() == UpgradesBasedOnEvents.EffectType.INSTANT) {
+            return new ItemBuilder(bonus.getMaterial()).setDisplayName("&6" + bonus.getName())
+                    .addLore("&eInstantly multiply your bank by &b" + bonus.getMultiplierIncrease() + "x&e.")
+                    .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)
+                    .setGlowing(bonus.getMultiplierIncrease() < 1)
+                    .create();
+        } else if (bonus.getEffectType() == UpgradesBasedOnEvents.EffectType.PERMANENT) {
             return new ItemBuilder(bonus.getMaterial()).setDisplayName("&6" + bonus.getName())
                                                        .addLore("&eGet a permanent &b" + bonus.getMultiplierIncrease() + "x " + bonus.getName() + "&e.")
                                                        .addItemFlags(ItemFlag.HIDE_ATTRIBUTES)

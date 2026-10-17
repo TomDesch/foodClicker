@@ -48,6 +48,7 @@ import java.util.Random;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.logging.Level;
+import java.util.function.LongSupplier;
 import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
@@ -87,12 +88,18 @@ public class ClickingPlayer {
     private RepeatingClickerTask purchaseTask;
     private final Map<Clickable, BukkitTask> boostTasks = new HashMap<>();
     private final long joinedAt;
+    private final LongSupplier clock;
     private double incomePerSecond;
     private int closedDetector;
     private boolean buymodeAll;
 
     public ClickingPlayer(Player player) {
+        this(player, () -> System.currentTimeMillis() / 1000);
+    }
+
+    ClickingPlayer(Player player, LongSupplier clock) {
         requireServerThread();
+        this.clock = clock;
         this.player = player;
         this.playerId = player.getUniqueId();
         this.playerName = player.getName();
@@ -282,8 +289,8 @@ public class ClickingPlayer {
         getActiveEvents().clear();
     }
 
-    private static long now() {
-        return System.currentTimeMillis() / 1000;
+    private long now() {
+        return clock.getAsLong();
     }
 
     private static void requireServerThread() {
@@ -383,8 +390,7 @@ public class ClickingPlayer {
         resetPaneItem(c);
         c.getBonus().doEffects(this);
 
-        if (c.getBonus().getBoostDuration(this) != -1) {
-            // perma upgrades don't need to be terminated
+        if (c.getBonus().getEffectType() == UpgradesBasedOnEvents.EffectType.TIMED) {
             getActiveBoosts().add(c);
             autoTerminateUpgrades(c);
         }
@@ -713,8 +719,8 @@ public class ClickingPlayer {
                 + CHAIN.calculateIncome(this)
                 + COMPANY.calculateIncome(this)
                 + HOUSEHOLDNAME.calculateIncome(this))
-                * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this))
-                * (1 + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this));
+                * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this) * getData().calculateTotalAchievementsUnlocked() / 100)
+                * (1 + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this) / 100);
     }
 
     public void flickBuyMode() {

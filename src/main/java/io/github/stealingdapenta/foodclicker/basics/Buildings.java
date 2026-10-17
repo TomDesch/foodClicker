@@ -93,13 +93,13 @@ public enum Buildings {
                                                                                                 .getSpecificBuildingsBaseMultiplier(this) * cp.getData()
                                                                                                                                               .getSpecificBuildingAmount(
                                                                                                                                                       this));
-        return income * (1 + FAIRTRADE.getCurrentBonus(cp));
+        return income * (1 + FAIRTRADE.getCurrentBonus(cp) / 100);
     }
 
     public double calculateCost(ClickingPlayer cp) {
         double cost = getBaseCost() * cp.getData()
                                         .getSpecificBuildingsCostMultiplier(this) * (Math.pow(1.15, cp.getData()
                                                                                                       .getSpecificBuildingAmount(this)));
-        return cost - (cost * DISCOUNT.getCurrentBonus(cp) / 100) + (cost * FAIRTRADE.getCurrentBonus(cp));
+        return cost - (cost * DISCOUNT.getCurrentBonus(cp) / 100) + (cost * FAIRTRADE.getCurrentBonus(cp) / 100);
     }
 }
