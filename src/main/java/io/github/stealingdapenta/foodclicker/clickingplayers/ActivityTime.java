@@ -2,7 +2,10 @@ package io.github.stealingdapenta.foodclicker.clickingplayers;
 
 import org.bukkit.configuration.file.YamlConfiguration;
 
-/** Server-thread owned accounting: active play is never also counted as idle time. */
+/**
+ * Server-thread-owned accounting that keeps active play, online idle time and offline time separate.
+ * All timestamps and durations are in seconds; timestamps use the Unix epoch.
+ */
 final class ActivityTime {
 
     private long closedAt;
@@ -12,6 +15,7 @@ final class ActivityTime {
     private boolean online;
     private boolean playing;
 
+    /** Restores persisted accounting without marking the player online or playing. */
     ActivityTime(YamlConfiguration config) {
         closedAt = config.getLong("gameCloseDate");
         loggedOutAt = config.getLong("loggedOutDate");
@@ -19,6 +23,7 @@ final class ActivityTime {
         offlineSeconds = Math.max(0, config.getLong("loggedOutTime"));
     }
 
+    /** Accumulates offline time and begins online idle time; repeated joins are ignored. */
     void join(long now) {
         if (online) {
             return;
@@ -29,6 +34,7 @@ final class ActivityTime {
         online = true;
     }
 
+    /** Accumulates the current online idle interval and starts active play, if online and idle. */
     void open(long now) {
         if (online && !playing) {
             closedSeconds += elapsed(closedAt, now);
@@ -37,6 +43,7 @@ final class ActivityTime {
         }
     }
 
+    /** Ends active play and starts an online idle interval; repeated closes preserve its start. */
     void close(long now) {
         if (playing) {
             playing = false;
@@ -44,6 +51,11 @@ final class ActivityTime {
         }
     }
 
+    /**
+     * Accumulates remaining online idle time and records the start of an offline interval.
+     *
+     * @return true for the first disconnect after joining, false if already offline
+     */
     boolean disconnect(long now) {
         if (!online) {
             return false;
@@ -56,18 +68,21 @@ final class ActivityTime {
         return true;
     }
 
+    /** Returns and clears accumulated online idle seconds, excluding any interval still in progress. */
     long takeClosedSeconds() {
         long seconds = closedSeconds;
         closedSeconds = 0;
         return seconds;
     }
 
+    /** Returns and clears accumulated offline seconds, excluding any interval still in progress. */
     long takeOfflineSeconds() {
         long seconds = offlineSeconds;
         offlineSeconds = 0;
         return seconds;
     }
 
+    /** Copies accounting into the supplied snapshot without saving it or advancing ongoing intervals. */
     void write(YamlConfiguration config) {
         config.set("gameCloseDate", closedAt);
         config.set("loggedOutDate", loggedOutAt);
@@ -75,6 +90,7 @@ final class ActivityTime {
         config.set("loggedOutTime", offlineSeconds);
     }
 
+    /** Treats missing timestamps and non-forward clock movement as zero elapsed time. */
     private static long elapsed(long start, long now) {
         return start <= 0 || now <= start ? 0 : now - start;
     }
