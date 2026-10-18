@@ -1,9 +1,9 @@
 name: FoodClicker
-version: 3.0.0
+version: 4.0.0
 main: io.github.stealingdapenta.foodclicker.FoodClicker
 author: StealingDaPenta
 description: IDLE inventory game.
-api-version: 1.20
+api-version: '26.3'
 
 commands:
   foodclicker:
@@ -17,4 +17,9 @@ commands:
     usage: /<command>
   fcfirework:
     description: Admin command to summon fireworks.
-    usage: /<command> <player> <size>
+    usage: /<command> <player> <amount> <size>
+
+permissions:
+  foodclicker.firework:
+    description: Spawn fireworks with the administrator command.
+    default: op

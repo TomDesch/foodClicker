@@ -15,38 +15,33 @@ import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.util.HashMap;
 import java.util.Map;
-import lombok.Getter;
+import org.bukkit.configuration.file.YamlConfiguration;
 
 public class ClickingPlayerData {
 
-    private final FileManager fm = FileManager.getInstance();
-    @Getter
+    private final FileManager fm;
     private final Map<Buildings, Integer> buildingsOwned;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseMultipliers;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseCostMultipliers;
-    @Getter
     private final Map<Buildings, Double> buildingsBaseCostIncreaser;
-    @Getter
     private final Map<String, Boolean> upgradesUnlocked;
-    @Getter
     private final Map<String, Integer> generalIntegerStats;
-    @Getter
     private final Map<String, Double> generalDoubleStats;
-    @Getter
     private final Map<String, BigDecimal> generalBigDecimals;
-    @Getter
     private final Map<String, Boolean> achievements;
-    @Getter
     private final Map<PrestigeEnum, Integer> prestigeShopBonusses;
-    @Getter
     private final ClickingPlayer cp;
-    @Getter
     private boolean prestigeHead;
+    private YamlConfiguration loadedConfig;
+    private ActivityTime activityTime;
 
     public ClickingPlayerData(ClickingPlayer cp) {
+        this(cp, FileManager.getInstance());
+    }
+
+    ClickingPlayerData(ClickingPlayer cp, FileManager fm) {
         this.cp = cp;
+        this.fm = fm;
 
         this.buildingsOwned = new HashMap<>();
         this.buildingsBaseMultipliers = new HashMap<>();
@@ -61,36 +56,56 @@ public class ClickingPlayerData {
         this.prestigeHead = false;
     }
 
-    public long loadGameCloseDate() {
-        return fm.getIntByKey(getCp(), "gameCloseDate");
+    public Map<Buildings, Integer> getBuildingsOwned() {
+        return buildingsOwned;
     }
 
-    public void resetGameCloseTime() {
-        saveGameCloseTime(0);
+    public Map<Buildings, Double> getBuildingsBaseMultipliers() {
+        return buildingsBaseMultipliers;
     }
 
-    public void saveGameCloseTime(long duration) {
-        fm.setLongByKey(getCp(), "gameCloseTime", duration);
+    public Map<Buildings, Double> getBuildingsBaseCostMultipliers() {
+        return buildingsBaseCostMultipliers;
     }
 
-    public long loadGameCloseTime() {
-        return fm.getLongByKey(getCp(), "gameCloseTime");
+    public Map<Buildings, Double> getBuildingsBaseCostIncreaser() {
+        return buildingsBaseCostIncreaser;
     }
 
-    public void saveGameCloseDate(long duration) {
-        fm.setLongByKey(getCp(), "gameCloseDate", duration);
+    public Map<String, Boolean> getUpgradesUnlocked() {
+        return upgradesUnlocked;
     }
 
-    public long loadLoggedOutTime() {
-        return fm.getLongByKey(getCp(), "loggedOutTime");
+    public Map<String, Integer> getGeneralIntegerStats() {
+        return generalIntegerStats;
     }
 
-    public void saveLoggedOutTime(long duration) {
-        fm.setLongByKey(getCp(), "loggedOutTime", duration);
+    public Map<String, Double> getGeneralDoubleStats() {
+        return generalDoubleStats;
     }
 
-    public void resetLoggedOutTime() {
-        saveLoggedOutTime(0);
+    public Map<String, BigDecimal> getGeneralBigDecimals() {
+        return generalBigDecimals;
+    }
+
+    public Map<String, Boolean> getAchievements() {
+        return achievements;
+    }
+
+    public Map<PrestigeEnum, Integer> getPrestigeShopBonusses() {
+        return prestigeShopBonusses;
+    }
+
+    public ClickingPlayer getCp() {
+        return cp;
+    }
+
+    public boolean isPrestigeHead() {
+        return prestigeHead;
+    }
+
+    ActivityTime getActivityTime() {
+        return activityTime;
     }
 
     public void doPrestigeHead() {
@@ -215,171 +230,179 @@ public class ClickingPlayerData {
         getGeneralBigDecimals().put("money", getGeneralBigDecimals().get("money").subtract(amount));
     }
 
-    public void loadEverythingFromFile() {//always do this async
-        fm.getPlayerFile(cp);
-        loadSettings();
-        loadBuildingsOwned();
-        loadBuildingsMultipliers();
-        loadBuildingsCostMultipliers(); // buildings.getname + PriceMultiplier
-        loadBuildingsBaseCostIncreaser(); // buildings.getname + BaseIncreaser
-        loadUpgradesUnlocked();
-        loadGeneralIntegerStats();
-        loadGeneralDoubleStats();
-        loadGeneralBigDecimalStats();
-        loadAchievements();
-        loadPrestigeBonuses();
+    public void loadSnapshot(YamlConfiguration config) {
+        loadedConfig = config;
+        activityTime = new ActivityTime(config);
+        loadSettings(config);
+        loadBuildingsOwned(config);
+        loadBuildingsMultipliers(config);
+        loadBuildingsCostMultipliers(config);
+        loadBuildingsBaseCostIncreaser(config);
+        loadUpgradesUnlocked(config);
+        loadGeneralIntegerStats(config);
+        loadGeneralDoubleStats(config);
+        loadGeneralBigDecimalStats(config);
+        loadAchievements(config);
+        loadPrestigeBonuses(config);
     }
 
-    public void saveEverythingToFile() { // always do this async
-        fm.getPlayerFile(cp);
-        saveSettings();
-        saveBuildingsOwned();
-        saveBuildingsMultipliers();
-        saveBuildingsCostMultipliers();
-        saveBuildingsBaseCostIncreaser();
-        saveUpgradesUnlocked();
-        saveGeneralIntegerStats();
-        saveGeneralDoubleStats();
-        saveGeneralBigDecimalStats();
-        saveAchievements();
-        savePrestigeBonuses();
-        fm.savePlayerFile(cp);
+    public String snapshot(String playerName) {
+        if (loadedConfig == null) {
+            throw new IllegalStateException("Cannot save an unloaded player");
+        }
+        YamlConfiguration config = new YamlConfiguration();
+        loadedConfig.getValues(false).forEach(config::set);
+        config.set("Player Name", playerName);
+        activityTime.write(config);
+        saveSettings(config);
+        saveBuildingsOwned(config);
+        saveBuildingsMultipliers(config);
+        saveBuildingsCostMultipliers(config);
+        saveBuildingsBaseCostIncreaser(config);
+        saveUpgradesUnlocked(config);
+        saveGeneralIntegerStats(config);
+        saveGeneralDoubleStats(config);
+        saveGeneralBigDecimalStats(config);
+        saveAchievements(config);
+        savePrestigeBonuses(config);
+        return config.saveToString();
     }
 
-    private void loadPrestigeBonuses() {
+    private void loadPrestigeBonuses(YamlConfiguration config) {
         for (PrestigeEnum prestigeEnum : PrestigeEnum.values()) {
-            getPrestigeShopBonusses().put(prestigeEnum, fm.getIntByKey(getCp(), prestigeEnum.getKey()));
+            getPrestigeShopBonusses().put(prestigeEnum, config.getInt(prestigeEnum.getKey()));
         }
     }
 
-    private void savePrestigeBonuses() {
+    private void savePrestigeBonuses(YamlConfiguration config) {
         for (Map.Entry<PrestigeEnum, Integer> entry : getPrestigeShopBonusses().entrySet()) {
-            fm.setIntByKey(getCp(), entry.getKey().getKey(), entry.getValue());
+            config.set(entry.getKey().getKey(), entry.getValue());
         }
     }
 
-    private void loadAchievements() {
+    private void loadAchievements(YamlConfiguration config) {
         for (AchievementsEnum achievementsEnum : AchievementsEnum.values()) {
-            getAchievements().put(achievementsEnum.getAchievement(), fm.getBooleanByKey(getCp(), achievementsEnum.getAchievement()));
+            getAchievements().put(achievementsEnum.getAchievement(), config.getBoolean(achievementsEnum.getAchievement()));
         }
     }
 
-    private void saveAchievements() {
+    private void saveAchievements(YamlConfiguration config) {
         for (Map.Entry<String, Boolean> entry : getAchievements().entrySet()) {
-            fm.setBooleanByKey(getCp(), entry.getKey(), entry.getValue());
+            config.set(entry.getKey(), entry.getValue());
         }
     }
 
-    private void loadSettings() {
+    private void loadSettings(YamlConfiguration config) {
         ClickingPlayerSettings settings = getCp().getSettings();
-        settings.setLoreDarkMode(fm.getBooleanByKey(getCp(), "loreDarkMode"));
-        settings.setInventoryDarkMode(fm.getBooleanByKey(getCp(), "inventoryDarkMode"));
-        settings.setDoChatMessages(fm.getBooleanByKey(getCp(), "doChats"));
-        settings.setDoFirework(fm.getBooleanByKey(getCp(), "doFireworks"));
-        settings.setDoSoundEffects(fm.getBooleanByKey(getCp(), "doSounds"));
+        settings.setLoreDarkMode(config.getBoolean("loreDarkMode"));
+        settings.setInventoryDarkMode(config.getBoolean("inventoryDarkMode"));
+        settings.setDoChatMessages(config.getBoolean("doChats"));
+        settings.setDoFirework(config.getBoolean("doFireworks"));
+        settings.setDoSoundEffects(config.getBoolean("doSounds"));
+        settings.setDoBigNumbers(config.getBoolean("doBigNumbers"));
     }
 
-    private void saveSettings() {
+    private void saveSettings(YamlConfiguration config) {
         ClickingPlayerSettings settings = getCp().getSettings();
-        fm.setBooleanByKey(getCp(), "loreDarkMode", settings.isLoreDarkMode());
-        fm.setBooleanByKey(getCp(), "inventoryDarkMode", settings.isInventoryDarkMode());
-        fm.setBooleanByKey(getCp(), "doChats", settings.isDoChatMessages());
-        fm.setBooleanByKey(getCp(), "doFireworks", settings.isDoFirework());
-        fm.setBooleanByKey(getCp(), "doSounds", settings.isDoSoundEffects());
+        config.set("loreDarkMode", settings.isLoreDarkMode());
+        config.set("inventoryDarkMode", settings.isInventoryDarkMode());
+        config.set("doChats", settings.isDoChatMessages());
+        config.set("doFireworks", settings.isDoFirework());
+        config.set("doSounds", settings.isDoSoundEffects());
+        config.set("doBigNumbers", settings.isDoBigNumbers());
     }
 
-    public void loadUpgradesUnlocked() {
+    private void loadUpgradesUnlocked(YamlConfiguration config) {
         //todo expand with based on achievements
         for (UpgradesBasedOnStats upgradesBasedOnStats : UpgradesBasedOnStats.values()) {
-            getUpgradesUnlocked().put(upgradesBasedOnStats.getUnlockedKey(), fm.getBooleanByKey(cp, upgradesBasedOnStats.getUnlockedKey()));
+            getUpgradesUnlocked().put(upgradesBasedOnStats.getUnlockedKey(), config.getBoolean(upgradesBasedOnStats.getUnlockedKey()));
         }
         for (UpgradesBasedOnBuildings upgradesBasedOnBuildings : UpgradesBasedOnBuildings.values()) {
-            getUpgradesUnlocked().put(upgradesBasedOnBuildings.getUnlockedKey(), fm.getBooleanByKey(cp, upgradesBasedOnBuildings.getUnlockedKey()));
+            getUpgradesUnlocked().put(upgradesBasedOnBuildings.getUnlockedKey(), config.getBoolean(upgradesBasedOnBuildings.getUnlockedKey()));
         }
     }
 
-    public void saveUpgradesUnlocked() {
+    private void saveUpgradesUnlocked(YamlConfiguration config) {
         for (Map.Entry<String, Boolean> entry : getUpgradesUnlocked().entrySet()) {
-            fm.setBooleanByKey(getCp(), entry.getKey(), entry.getValue());
+            config.set(entry.getKey(), entry.getValue());
         }
     }
 
-    public void loadGeneralDoubleStats() {
-        getGeneralDoubleStats().put("Click Multiplier", Math.max(fm.getDoubleByKey(getCp(), "Click Multiplier"), 1));
-        getGeneralDoubleStats().put("earnedByClicking", fm.getDoubleByKey(getCp(), "earnedByClicking"));
-        getGeneralDoubleStats().put("eventChance", Math.max(fm.getDoubleByKey(getCp(), "eventChance"), 0.17));
+    private void loadGeneralDoubleStats(YamlConfiguration config) {
+        getGeneralDoubleStats().put("Click Multiplier", Math.max(config.getDouble("Click Multiplier"), 1));
+        getGeneralDoubleStats().put("earnedByClicking", config.getDouble("earnedByClicking"));
+        getGeneralDoubleStats().put("eventChance", Math.max(config.getDouble("eventChance"), 0.17));
     }
 
-    public void saveGeneralDoubleStats() {
+    private void saveGeneralDoubleStats(YamlConfiguration config) {
         for (Map.Entry<String, Double> entry : getGeneralDoubleStats().entrySet()) {
-            fm.setDoubleByKey(getCp(), entry.getKey(), entry.getValue());
+            config.set(entry.getKey(), entry.getValue());
         }
     }
 
-    public void loadGeneralBigDecimalStats() {
-        getGeneralBigDecimals().put("money", fm.getBigDecimalByKey(getCp(), "money"));
-        getGeneralBigDecimals().put("legacy earnings", fm.getBigDecimalByKey(getCp(), "legacy earnings"));
-        getGeneralBigDecimals().put("alltimeearnings", fm.getBigDecimalByKey(getCp(), "alltimeearnings"));
+    private void loadGeneralBigDecimalStats(YamlConfiguration config) {
+        getGeneralBigDecimals().put("money", fm.getBigDecimalByKey(config, "money"));
+        getGeneralBigDecimals().put("legacy earnings", fm.getBigDecimalByKey(config, "legacy earnings"));
+        getGeneralBigDecimals().put("alltimeearnings", fm.getBigDecimalByKey(config, "alltimeearnings"));
     }
 
-    public void saveGeneralBigDecimalStats() {
+    private void saveGeneralBigDecimalStats(YamlConfiguration config) {
         for (Map.Entry<String, BigDecimal> entry : getGeneralBigDecimals().entrySet()) {
-            fm.setBigDecimalByKey(getCp(), entry.getKey(), entry.getValue());
+            config.set(entry.getKey(), entry.getValue().toPlainString());
         }
     }
 
-    public void loadGeneralIntegerStats() {
-        getGeneralIntegerStats().put("cookie", fm.getIntByKey(getCp(), "cookie"));
-        getGeneralIntegerStats().put("playtime", fm.getIntByKey(getCp(), "playtime"));
+    private void loadGeneralIntegerStats(YamlConfiguration config) {
+        getGeneralIntegerStats().put("cookie", config.getInt("cookie"));
+        getGeneralIntegerStats().put("playtime", config.getInt("playtime"));
 
-        getGeneralIntegerStats().put("Prestige Playtime", fm.getIntByKey(getCp(), "Prestige Playtime"));
-        getGeneralIntegerStats().put("clickablesClicked", fm.getIntByKey(getCp(), "clickablesClicked"));
+        getGeneralIntegerStats().put("Prestige Playtime", config.getInt("Prestige Playtime"));
+        getGeneralIntegerStats().put("clickablesClicked", config.getInt("clickablesClicked"));
 
-        getGeneralIntegerStats().put("Prestige level", fm.getIntByKey(getCp(), "Prestige level"));
-        getGeneralIntegerStats().put("prestige coins", fm.getIntByKey(getCp(), "prestige coins"));
-
+        getGeneralIntegerStats().put("Prestige level", config.getInt("Prestige level"));
+        getGeneralIntegerStats().put("prestige coins", config.getInt("prestige coins"));
     }
 
-    public void saveGeneralIntegerStats() {
+    private void saveGeneralIntegerStats(YamlConfiguration config) {
         for (Map.Entry<String, Integer> entry : getGeneralIntegerStats().entrySet()) {
-            fm.setDoubleByKey(getCp(), entry.getKey(), entry.getValue());
+            config.set(entry.getKey(), entry.getValue());
         }
     }
 
-    private void loadBuildingsBaseCostIncreaser() {
+    private void loadBuildingsBaseCostIncreaser(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            getBuildingsBaseCostIncreaser().put(b, fm.getDoubleByKey(getCp(), b.getName() + "BaseIncreaser"));
+            getBuildingsBaseCostIncreaser().put(b, config.getDouble(b.getName() + "BaseIncreaser"));
         }
     }
 
-    private void saveBuildingsBaseCostIncreaser() {
+    private void saveBuildingsBaseCostIncreaser(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            fm.setDoubleByKey(getCp(), b.getName() + "BaseIncreaser", getSpecificBuildingsBaseIncreaser(b));
+            config.set(b.getName() + "BaseIncreaser", getSpecificBuildingsBaseIncreaser(b));
         }
     }
 
-    private void loadBuildingsCostMultipliers() {
+    private void loadBuildingsCostMultipliers(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            getBuildingsBaseCostMultipliers().put(b, Math.max(fm.getDoubleByKey(getCp(), b.getName() + "PriceMultiplier"), 1));
+            getBuildingsBaseCostMultipliers().put(b, Math.max(config.getDouble(b.getName() + "PriceMultiplier"), 1));
         }
     }
 
-    private void saveBuildingsCostMultipliers() {
+    private void saveBuildingsCostMultipliers(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            fm.setDoubleByKey(getCp(), b.getName() + "PriceMultiplier", getSpecificBuildingsCostMultiplier(b));
+            config.set(b.getName() + "PriceMultiplier", getSpecificBuildingsCostMultiplier(b));
         }
     }
 
-    private void loadBuildingsMultipliers() {
+    private void loadBuildingsMultipliers(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
             //if it's a new file, it'll return 0, so then mathMax makes it 1 by default
-            getBuildingsBaseMultipliers().put(b, Math.max(fm.getDoubleByKey(getCp(), b.getName() + "BaseMultiplier"), 1));
+            getBuildingsBaseMultipliers().put(b, Math.max(config.getDouble(b.getName() + "BaseMultiplier"), 1));
         }
     }
 
-    private void saveBuildingsMultipliers() {
+    private void saveBuildingsMultipliers(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            fm.setDoubleByKey(getCp(), b.getName() + "BaseMultiplier", getSpecificBuildingsBaseMultiplier(b));
+            config.set(b.getName() + "BaseMultiplier", getSpecificBuildingsBaseMultiplier(b));
         }
     }
 
@@ -395,15 +418,15 @@ public class ClickingPlayerData {
         return getBuildingsBaseCostIncreaser().get(b);
     }
 
-    private void loadBuildingsOwned() {
+    private void loadBuildingsOwned(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            getBuildingsOwned().put(b, fm.getIntByKey(getCp(), b.getName()));
+            getBuildingsOwned().put(b, config.getInt(b.getName()));
         }
     }
 
-    private void saveBuildingsOwned() {
+    private void saveBuildingsOwned(YamlConfiguration config) {
         for (Buildings b : Buildings.values()) {
-            fm.setIntByKey(getCp(), b.getName(), getSpecificBuildingAmount(b));
+            config.set(b.getName(), getSpecificBuildingAmount(b));
         }
     }
 
@@ -472,6 +495,7 @@ public class ClickingPlayerData {
     }
 
     public void doPrestige() {
+        getCp().resetTransientEffects();
         int earningAmount = calculateAvailablePrestigeLevels();
         getGeneralIntegerStats().put("Prestige level", getCurrentPrestigeLevels() + earningAmount);
         getGeneralIntegerStats().put("prestige coins", getCurrentPrestigeCoins() + earningAmount);

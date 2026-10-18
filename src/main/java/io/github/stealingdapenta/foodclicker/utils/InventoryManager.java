@@ -1,15 +1,10 @@
 package io.github.stealingdapenta.foodclicker.utils;
 
 import static io.github.stealingdapenta.foodclicker.utils.ItemBuilder.colorStatic;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.ACHIEVEMENTS_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.GAME_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.PREFERENCES_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.PRESTIGE_SHOP;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.SHOP_GUI_TITLE_ADDENDUM;
-import static io.github.stealingdapenta.foodclicker.utils.Listeners.UPGRADES_GUI_TITLE_ADDENDUM;
 
 import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
+import io.github.stealingdapenta.foodclicker.basics.GameInventory;
 import java.math.BigDecimal;
 import java.math.RoundingMode;
 import java.text.DecimalFormat;
@@ -17,20 +12,40 @@ import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.UUID;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.inventory.Inventory;
+import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.SkullMeta;
 
-@Getter
 public class InventoryManager {
 
     private static InventoryManager inventoryManager;
-    private final Map<Player, ClickingPlayer> clickingPlayerMap = new HashMap<>();
+    private static final BigDecimal MILLION = BigDecimal.valueOf(1000000D);
+    private static final BigDecimal BILLION = BigDecimal.valueOf(1000000000D);
+    private static final BigDecimal TRILLION = BigDecimal.valueOf(1000000000000D);
+    private static final BigDecimal QUADRILLION = BigDecimal.valueOf(1000000000000000D);
+    private static final BigDecimal QUINTILLION = BigDecimal.valueOf(1000000000000000000D);
+    private static final BigDecimal HEXTILLION = BigDecimal.valueOf(1000000000000000000000D);
+    private static final BigDecimal SEPTILLION = BigDecimal.valueOf(1000000000000000000000000D);
+    private static final BigDecimal OCTILLION = BigDecimal.valueOf(1000000000000000000000000000D);
+    private static final BigDecimal NONILLION = BigDecimal.valueOf(1000000000000000000000000000000D);
+    private static final BigDecimal DECILLION = BigDecimal.valueOf(1000000000000000000000000000000000D);
+    private static final BigDecimal UNDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000D);
+    private static final BigDecimal DUODECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000D);
+    private static final BigDecimal TREDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000D);
+    private static final BigDecimal QUATTUORDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000D);
+    private static final BigDecimal QUINDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal HEXDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal SEPTENDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal OCTODECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal NOVEMDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal VIGINTILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000D);
+    private final Map<UUID, ClickingPlayer> clickingPlayerMap = new HashMap<>();
 
     private InventoryManager() {
     }
@@ -40,6 +55,10 @@ public class InventoryManager {
             inventoryManager = new InventoryManager();
         }
         return inventoryManager;
+    }
+
+    public Map<UUID, ClickingPlayer> getClickingPlayerMap() {
+        return clickingPlayerMap;
     }
 
     public void setInventoryBorder(Inventory inv, Material color) {
@@ -106,32 +125,67 @@ public class InventoryManager {
     }
 
     public void openGUI(Inventory i, Player p) {
-        closeGUI(p);
-        Bukkit.getScheduler()
-              .runTaskLater(FoodClicker.getInstance(), () -> p.openInventory(i), 2L);
+        Bukkit.getScheduler().runTask(FoodClicker.getInstance(), () -> {
+            if (p.isOnline() && ownsInventory(i, p)) {
+                p.openInventory(i);
+            }
+        });
     }
 
     public boolean isPlayerInMap(Player p) {
-        return clickingPlayerMap.containsKey(p);
+        return clickingPlayerMap.containsKey(p.getUniqueId());
     }
 
     public void removePlayerFromMap(Player p) {
-        clickingPlayerMap.remove(p);
+        clickingPlayerMap.remove(p.getUniqueId());
     }
 
     public void addClickingPlayerToMap(ClickingPlayer cp) {
         Player p = cp.getPlayer();
-        if (isPlayerInMap(p)) {
-            removePlayerFromMap(p);
+        if (clickingPlayerMap.putIfAbsent(p.getUniqueId(), cp) != null) {
+            throw new IllegalStateException("Player already has a FoodClicker session");
         }
-        clickingPlayerMap.put(p, cp);
     }
 
-    public boolean inventoryIsFoodClicker(String invTitle, Player player) {
-        return invTitle.equals(player.getDisplayName() + GAME_GUI_TITLE_ADDENDUM) || invTitle.equals(
-                player.getDisplayName() + ACHIEVEMENTS_GUI_TITLE_ADDENDUM) || invTitle.equals(player.getDisplayName() + PREFERENCES_GUI_TITLE_ADDENDUM)
-                || invTitle.equals(player.getDisplayName() + SHOP_GUI_TITLE_ADDENDUM) || invTitle.equals(
-                player.getDisplayName() + UPGRADES_GUI_TITLE_ADDENDUM) || invTitle.equals(player.getDisplayName() + PRESTIGE_SHOP);
+    public boolean isCurrent(ClickingPlayer session) {
+        return clickingPlayerMap.get(session.getPlayerId()) == session;
+    }
+
+    public void remove(ClickingPlayer session) {
+        clickingPlayerMap.remove(session.getPlayerId(), session);
+    }
+
+    public void connect(Player player) {
+        ClickingPlayer previous = clickingPlayerMap.get(player.getUniqueId());
+        if (previous == null) {
+            addClickingPlayerToMap(new ClickingPlayer(player));
+        } else if (previous.getPlayer() != player || previous.isDisconnected()) {
+            FoodClicker plugin = FoodClicker.getInstance();
+            previous.shutdownAndSave().whenComplete((ignored, failure) ->
+                    plugin.onServerThread(() -> {
+                        if (failure == null) {
+                            remove(previous);
+                            if (player.isOnline() && !isPlayerInMap(player)) {
+                                addClickingPlayerToMap(new ClickingPlayer(player));
+                            }
+                        } else if (failure != null && player.isOnline()) {
+                            player.sendMessage("FoodClicker: Your previous session could not be saved. Use /foodclicker to retry.");
+                        }
+                    }));
+        }
+    }
+
+    public boolean inventoryIsFoodClicker(InventoryView view, Player player) {
+        return ownsInventory(view.getTopInventory(), player);
+    }
+
+    public boolean ownsInventory(Inventory inventory, Player player) {
+        if (!(inventory.getHolder() instanceof GameInventory holder)) {
+            return false;
+        }
+        ClickingPlayer session = holder.getSession();
+        return session.getPlayer() == player && isCurrent(session) && session.isReady() && session.isGameOpen()
+                && session.getGui() != null && session.getGui().getGameWindow() == inventory;
     }
 
     public String makeNumbersPretty(double d) {
@@ -177,67 +231,46 @@ public class InventoryManager {
     }
 
     public String truncateNumber(BigDecimal number) {
-        BigDecimal million = BigDecimal.valueOf(1000000D);
-        BigDecimal billion = BigDecimal.valueOf(1000000000D);
-        BigDecimal trillion = BigDecimal.valueOf(1000000000000D);
-        BigDecimal quadrillion = BigDecimal.valueOf(1000000000000000D);
-        BigDecimal quintillion = BigDecimal.valueOf(1000000000000000000D);
-        BigDecimal hextillion = BigDecimal.valueOf(1000000000000000000000D);
-        BigDecimal septillion = BigDecimal.valueOf(1000000000000000000000000D);
-        BigDecimal octillion = BigDecimal.valueOf(1000000000000000000000000000D);
-        BigDecimal nonillion = BigDecimal.valueOf(1000000000000000000000000000000D);
-        BigDecimal decillion = BigDecimal.valueOf(1000000000000000000000000000000000D);
-        BigDecimal undecillion = BigDecimal.valueOf(1000000000000000000000000000000000000D);
-        BigDecimal duodecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000D);
-        BigDecimal tredecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000D);
-        BigDecimal quattuordecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000D);
-        BigDecimal quindecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000D);
-        BigDecimal hexdecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000D);
-        BigDecimal septendecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000D);
-        BigDecimal octodecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000D);
-        BigDecimal novemdecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000D);
-        BigDecimal vigintillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000D);
-
-        if (isBetween(number, million, billion)) {
-            return (makeNumbersPretty(calculateFraction(number, million)) + " Million");
-        } else if (isBetween(number, billion, trillion)) {
-            return (makeNumbersPretty(calculateFraction(number, billion)) + " Billion");
-        } else if (isBetween(number, trillion, quadrillion)) {
-            return (makeNumbersPretty(calculateFraction(number, trillion)) + " Trillion");
-        } else if (isBetween(number, quadrillion, quintillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quadrillion)) + " Quadrillion");
-        } else if (isBetween(number, quintillion, hextillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quintillion)) + " Quintillion");
-        } else if (isBetween(number, hextillion, septillion)) {
-            return (makeNumbersPretty(calculateFraction(number, hextillion)) + " Hextillion");
-        } else if (isBetween(number, septillion, octillion)) {
-            return (makeNumbersPretty(calculateFraction(number, septillion)) + " Septillion");
-        } else if (isBetween(number, octillion, nonillion)) {
-            return (makeNumbersPretty(calculateFraction(number, octillion)) + " Octillion");
-        } else if (isBetween(number, nonillion, decillion)) {
-            return (makeNumbersPretty(calculateFraction(number, nonillion)) + " Nonillion");
-        } else if (isBetween(number, decillion, undecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, decillion)) + " Decillion");
-        } else if (isBetween(number, undecillion, duodecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, undecillion)) + " Undecillion");
-        } else if (isBetween(number, duodecillion, tredecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, duodecillion)) + " Duodecillion");
-        } else if (isBetween(number, tredecillion, quattuordecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, tredecillion)) + " Tredecillion");
-        } else if (isBetween(number, quattuordecillion, quindecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quattuordecillion)) + " Quattuordecillion");
-        } else if (isBetween(number, quindecillion, hexdecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quindecillion)) + " Quindecillion");
-        } else if (isBetween(number, hexdecillion, septendecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, hexdecillion)) + " Hexdecillion");
-        } else if (isBetween(number, septendecillion, octodecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, septendecillion)) + " Septendecillion");
-        } else if (isBetween(number, octodecillion, novemdecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, octodecillion)) + " Octodecillion");
-        } else if (number.compareTo(novemdecillion) > 0) {
-            return (makeNumbersPretty(calculateFraction(number, novemdecillion)) + " Novemdecillion");
-        } else if (number.compareTo(vigintillion) > 0) {
-            return (makeNumbersPretty(calculateFraction(number, vigintillion)) + " Vigintillion");
+        if (isBetween(number, MILLION, BILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, MILLION)) + " Million");
+        } else if (isBetween(number, BILLION, TRILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, BILLION)) + " Billion");
+        } else if (isBetween(number, TRILLION, QUADRILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, TRILLION)) + " Trillion");
+        } else if (isBetween(number, QUADRILLION, QUINTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUADRILLION)) + " Quadrillion");
+        } else if (isBetween(number, QUINTILLION, HEXTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUINTILLION)) + " Quintillion");
+        } else if (isBetween(number, HEXTILLION, SEPTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, HEXTILLION)) + " Hextillion");
+        } else if (isBetween(number, SEPTILLION, OCTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, SEPTILLION)) + " Septillion");
+        } else if (isBetween(number, OCTILLION, NONILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, OCTILLION)) + " Octillion");
+        } else if (isBetween(number, NONILLION, DECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, NONILLION)) + " Nonillion");
+        } else if (isBetween(number, DECILLION, UNDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, DECILLION)) + " Decillion");
+        } else if (isBetween(number, UNDECILLION, DUODECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, UNDECILLION)) + " Undecillion");
+        } else if (isBetween(number, DUODECILLION, TREDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, DUODECILLION)) + " Duodecillion");
+        } else if (isBetween(number, TREDECILLION, QUATTUORDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, TREDECILLION)) + " Tredecillion");
+        } else if (isBetween(number, QUATTUORDECILLION, QUINDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUATTUORDECILLION)) + " Quattuordecillion");
+        } else if (isBetween(number, QUINDECILLION, HEXDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUINDECILLION)) + " Quindecillion");
+        } else if (isBetween(number, HEXDECILLION, SEPTENDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, HEXDECILLION)) + " Hexdecillion");
+        } else if (isBetween(number, SEPTENDECILLION, OCTODECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, SEPTENDECILLION)) + " Septendecillion");
+        } else if (isBetween(number, OCTODECILLION, NOVEMDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, OCTODECILLION)) + " Octodecillion");
+        } else if (isBetween(number, NOVEMDECILLION, VIGINTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, NOVEMDECILLION)) + " Novemdecillion");
+        } else if (number.compareTo(VIGINTILLION) >= 0) {
+            return (makeNumbersPretty(calculateFraction(number, VIGINTILLION)) + " Vigintillion");
         }
 
         return makeNumbersPretty(number);

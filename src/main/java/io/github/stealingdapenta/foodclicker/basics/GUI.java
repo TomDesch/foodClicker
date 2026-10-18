@@ -45,8 +45,6 @@ import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSetti
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.util.ArrayList;
-import lombok.Getter;
-import org.bukkit.Bukkit;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -55,13 +53,10 @@ import org.bukkit.inventory.ItemStack;
 public class GUI {
 
     private final InventoryManager im = InventoryManager.getInstance();
-    @Getter
     private final ClickingPlayer cp;
-    @Getter
     private int gameState;
     private String GUItitle;
     private Inventory inventory;
-    @Getter
     private int achievementsPageNumber;
 
     public GUI(ClickingPlayer cp) {
@@ -71,11 +66,25 @@ public class GUI {
         this.achievementsPageNumber = 1;
     }
 
+    public ClickingPlayer getCp() {
+        return cp;
+    }
+
+    public int getGameState() {
+        return gameState;
+    }
+
+    public int getAchievementsPageNumber() {
+        return achievementsPageNumber;
+    }
+
     public void setAchievementsPageNumber(int achievementsPageNumber) {
         this.achievementsPageNumber = achievementsPageNumber;
     }
 
     public void setGameState(int gameState) {
+        getCp().cancelPurchases();
+        getCp().clearEvents();
         this.gameState = gameState;
         Inventory gameWindow = null;
 
@@ -130,7 +139,7 @@ public class GUI {
                          .getPrimaryLoreColor(); // blue
 
         setGUItitle(GAME_GUI_TITLE_ADDENDUM);
-        Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
+        Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
         im.setInventoryBorder(GUI, border);
 
@@ -175,7 +184,7 @@ public class GUI {
                             .getBorderPaneColor();
 
         setGUItitle(SHOP_GUI_TITLE_ADDENDUM);
-        Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
+        Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
         im.setInventoryBorder(GUI, border);
 
@@ -244,7 +253,7 @@ public class GUI {
                                                       .create();
 
         setGUItitle(ACHIEVEMENTS_GUI_TITLE_ADDENDUM);
-        Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
+        Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
         im.setInventoryBorder(GUI, border);
 
@@ -314,7 +323,7 @@ public class GUI {
                               .getTextLoreColor(); // white or gray
 
         setGUItitle(UPGRADES_GUI_TITLE_ADDENDUM);
-        Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
+        Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
         im.setInventoryBorder(GUI, border);
 
@@ -361,7 +370,7 @@ public class GUI {
                                   .getTextLoreColor(); // white or gray
 
             setGUItitle(PREFERENCES_GUI_TITLE_ADDENDUM);
-            Inventory GUI = Bukkit.createInventory(getCp().getPlayer(), 54, getGUItitle());
+            Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
             im.setInventoryBorder(GUI, border);
 
@@ -430,7 +439,7 @@ public class GUI {
                               .getTextLoreColor(); // white or gray
 
         setGUItitle(PRESTIGE_SHOP);
-        Inventory GUI = Bukkit.createInventory(cp.getPlayer(), 54, getGUItitle());
+        Inventory GUI = new GameInventory(cp, getGUItitle()).getInventory();
 
         im.setInventoryBorder(GUI, border);
 

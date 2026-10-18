@@ -21,7 +21,6 @@ import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
 import java.math.BigDecimal;
 import java.math.MathContext;
 import java.util.Random;
-import lombok.Getter;
 import org.bukkit.Material;
 
 public enum UpgradesBasedOnEvents {
@@ -86,18 +85,18 @@ public enum UpgradesBasedOnEvents {
     PARALYSE("Cold Fingers", Material.APPLE, "Click Multiplier", 0.1, 14),
     ;
 
-    @Getter
     private final double multiplierIncrease;
-    @Getter
     private final String affectingKey;
     private final int boostDuration;
-    @Getter
     private final Buildings buildings;
-    @Getter
     private final String name;
-    @Getter
     private final Material material;
     private final Random r = new Random();
+    private final EffectType effectType;
+
+    public enum EffectType {
+        TIMED, INSTANT, PERMANENT
+    }
 
     UpgradesBasedOnEvents(String name, Material material, String affectingKey, double multiplierIncrease) {
         this.multiplierIncrease = multiplierIncrease;
@@ -106,6 +105,7 @@ public enum UpgradesBasedOnEvents {
         this.name = name;
         this.material = material;
         this.boostDuration = 0;
+        this.effectType = affectingKey.equals("money") ? EffectType.INSTANT : EffectType.PERMANENT;
     }
 
     UpgradesBasedOnEvents(String name, Material material, String affectingKey, double multiplierIncrease, int boostDuration) {
@@ -115,6 +115,7 @@ public enum UpgradesBasedOnEvents {
         this.buildings = null;
         this.name = name;
         this.material = material;
+        this.effectType = EffectType.TIMED;
     }
 
     UpgradesBasedOnEvents(Buildings buildings, double multiplierIncrease, int boostDuration) {
@@ -124,6 +125,7 @@ public enum UpgradesBasedOnEvents {
         this.buildings = buildings;
         this.name = buildings.getName() + " bonus";
         this.material = buildings.getMaterial();
+        this.effectType = EffectType.TIMED;
     }
 
     UpgradesBasedOnEvents(String name, Material material, Buildings buildings, double multiplierIncrease, int boostDuration) {
@@ -133,10 +135,35 @@ public enum UpgradesBasedOnEvents {
         this.buildings = buildings;
         this.name = name;
         this.material = material;
+        this.effectType = EffectType.TIMED;
+    }
+
+    public double getMultiplierIncrease() {
+        return multiplierIncrease;
+    }
+
+    public String getAffectingKey() {
+        return affectingKey;
+    }
+
+    public Buildings getBuildings() {
+        return buildings;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public Material getMaterial() {
+        return material;
     }
 
     public int getBoostDuration(ClickingPlayer cp) {
-        return boostDuration * (1 + (int) EVENTDURATION.getCurrentBonus(cp));
+        return (int) Math.round(boostDuration * (1 + EVENTDURATION.getCurrentBonus(cp) / 100));
+    }
+
+    public EffectType getEffectType() {
+        return effectType;
     }
 
     public void doEffects(ClickingPlayer cp) {
@@ -157,7 +184,7 @@ public enum UpgradesBasedOnEvents {
                 cp.doMessage("Your &b" + b.getName() + "s &eare boosted by &b" + getMultiplierIncrease() + "x &efor &b" + getBoostDuration(cp) + " &eseconds!");
             } else {
                 cp.doMessage(
-                        "&cA disgrace! Your &b" + b.getName() + "s &care slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease())) + "% &cfor &b"
+                        "&cA disgrace! Your &b" + b.getName() + "s &care slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease()) * 100) + "% &cfor &b"
                                 + getBoostDuration(cp) + " " + "&cseconds!");
             }
         } else {
@@ -188,7 +215,7 @@ public enum UpgradesBasedOnEvents {
                     if (getMultiplierIncrease() > 1) {
                         cp.doMessage("Stocks went up! Your current &bbankvalue &egot multiplied by &b" + getMultiplierIncrease() + "x&e!");
                     } else {
-                        cp.doMessage("&cA burglary! Your &bbankvalue &cdeclined by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease())) + "%&c!");
+                        cp.doMessage("&cA burglary! Your &bbankvalue &cdeclined by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease()) * 100) + "%&c!");
                     }
                 } else {
                     cp.doMessage("Your &b" + getAffectingKey() + " &eis permanently boosted by &b" + getMultiplierIncrease() + "x&e!");
@@ -198,7 +225,7 @@ public enum UpgradesBasedOnEvents {
                     cp.doMessage("Your &b" + getAffectingKey() + " &eis boosted by &b" + getMultiplierIncrease() + "x &efor &b" + getBoostDuration(cp)
                                          + " &eseconds!");
                 } else {
-                    cp.doMessage("&cA disgrace! Your &b" + getAffectingKey() + " &cis slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease()))
+                    cp.doMessage("&cA disgrace! Your &b" + getAffectingKey() + " &cis slowed down by &b" + im.makeNumbersPretty((1 - getMultiplierIncrease()) * 100)
                                          + "% &cfor &b" + getBoostDuration(cp) + " &cseconds!");
                 }
             }
@@ -207,6 +234,9 @@ public enum UpgradesBasedOnEvents {
     }
 
     public void undoEffects(ClickingPlayer cp) {
+        if (effectType != EffectType.TIMED) {
+            return;
+        }
         Buildings b = getBuildings();
         if (b != null) {
             cp.getData()

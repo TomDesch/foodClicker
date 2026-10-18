@@ -33,6 +33,7 @@ import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnEvents;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnStats;
 import io.github.stealingdapenta.foodclicker.utils.InventoryManager;
+import io.github.stealingdapenta.foodclicker.utils.FileManager;
 import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import io.github.stealingdapenta.foodclicker.utils.RepeatingClickerTask;
 import java.math.BigDecimal;
@@ -41,8 +42,14 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
+import java.util.Map;
+import java.util.HashMap;
 import java.util.Random;
-import lombok.Getter;
+import java.util.UUID;
+import java.util.concurrent.CompletableFuture;
+import java.util.logging.Level;
+import java.util.function.LongSupplier;
+import org.bukkit.configuration.file.YamlConfiguration;
 import org.bukkit.Bukkit;
 import org.bukkit.Color;
 import org.bukkit.FireworkEffect;
@@ -57,31 +64,49 @@ import org.bukkit.inventory.InventoryView;
 import org.bukkit.inventory.ItemFlag;
 import org.bukkit.inventory.ItemStack;
 import org.bukkit.inventory.meta.FireworkMeta;
+import org.bukkit.scheduler.BukkitTask;
 
 public class ClickingPlayer {
     private static final InventoryManager im = InventoryManager.getInstance();
     private static final Random r = new Random();
-    @Getter
+    private final InitializationGate initializationGate = new InitializationGate();
     private final Player player;
-    @Getter
+    private final UUID playerId;
+    private final String playerName;
+    private final FoodClicker plugin;
     private final ArrayList<Clickable> activeEvents;
-    @Getter
     private final ArrayList<Clickable> activeBoosts;
     private final ClickingPlayerData cpd;
     private final ClickingPlayerSettings cps;
-    @Getter
     private GUI gui;
-    @Getter
+    private boolean loadingFailed;
+    private boolean disconnected;
+    private boolean gameOpen;
+    private String pendingSnapshot;
+    private CompletableFuture<Void> saveFuture;
+    private long disconnectedAt;
+    private String loadingSnapshot;
     private RepeatingClickerTask repeatingClickerTask;
-    @Getter
+    private RepeatingClickerTask purchaseTask;
+    private final Map<Clickable, BukkitTask> boostTasks = new HashMap<>();
+    private final long joinedAt;
+    private final LongSupplier clock;
     private double incomePerSecond;
-    @Getter
     private int closedDetector;
-    @Getter
     private boolean buymodeAll;
 
     public ClickingPlayer(Player player) {
+        this(player, () -> System.currentTimeMillis() / 1000);
+    }
+
+    ClickingPlayer(Player player, LongSupplier clock) {
+        requireServerThread();
+        this.clock = clock;
         this.player = player;
+        this.playerId = player.getUniqueId();
+        this.playerName = player.getName();
+        this.plugin = FoodClicker.getInstance();
+        this.joinedAt = now();
         this.buymodeAll = false;
         this.activeEvents = new ArrayList<>();
         this.activeBoosts = new ArrayList<>();
@@ -89,6 +114,50 @@ public class ClickingPlayer {
         this.cps = new ClickingPlayerSettings(this);
 
         doAllCalculationsAsync();
+    }
+
+    public Player getPlayer() {
+        return player;
+    }
+
+    public UUID getPlayerId() {
+        return playerId;
+    }
+
+    public boolean isGameOpen() {
+        return gameOpen && !disconnected;
+    }
+
+    public boolean isDisconnected() {
+        return disconnected;
+    }
+
+    public ArrayList<Clickable> getActiveEvents() {
+        return activeEvents;
+    }
+
+    public ArrayList<Clickable> getActiveBoosts() {
+        return activeBoosts;
+    }
+
+    public GUI getGui() {
+        return gui;
+    }
+
+    public RepeatingClickerTask getRepeatingClickerTask() {
+        return repeatingClickerTask;
+    }
+
+    public double getIncomePerSecond() {
+        return incomePerSecond;
+    }
+
+    public int getClosedDetector() {
+        return closedDetector;
+    }
+
+    public boolean isBuymodeAll() {
+        return buymodeAll;
     }
 
     public ClickingPlayerSettings getSettings() {
@@ -100,17 +169,163 @@ public class ClickingPlayer {
     }
 
     private void doAllCalculationsAsync() {
-        ClickingPlayer cp = this;
+        FileManager files = FileManager.getInstance();
+        plugin.getPersistence().submit(() -> files.read(playerId))
+              .whenComplete((config, failure) -> plugin.onServerThread(() -> finishInitialization(config, failure)));
+    }
 
-        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-            cp.getData().loadEverythingFromFile();
-            cp.incomePerSecond = calculateTotalIncomePerSecond();
-            cp.gui = new GUI(this);
-            cp.repeatingClickerTask = createTask();
+    private void finishInitialization(YamlConfiguration config, Throwable failure) {
+        requireServerThread();
+        if (initializationGate.isCancelled() || !im.isCurrent(this) || !player.isOnline()) {
+            return;
+        }
+        try {
+            if (failure != null) {
+                throw new IllegalStateException("Unable to load player data", failure);
+            }
+            getData().loadSnapshot(config);
+            incomePerSecond = calculateTotalIncomePerSecond();
+            getData().getActivityTime().join(joinedAt);
+            initializationGate.markReady();
+        } catch (RuntimeException loadFailure) {
+            loadingFailed = true;
+            initializationGate.cancel();
+            stopGameplay();
+            im.remove(this);
+            plugin.getLogger().log(Level.SEVERE, "Unable to initialize FoodClicker player " + playerId, loadFailure);
+            player.sendMessage("FoodClicker: Your data could not be loaded. It was not overwritten. Use /foodclicker to retry after it is repaired.");
+        }
+    }
 
-            earnAfkIncomes();
+    public void runWhenReady(Runnable action) {
+        initializationGate.runWhenReady(action);
+    }
 
+    public boolean isReady() {
+        return initializationGate.isReady();
+    }
+
+    public CompletableFuture<Void> shutdownAndSave() {
+        requireServerThread();
+        if (!isReady()) {
+            initializationGate.cancel();
+            if (!disconnected) {
+                disconnected = true;
+                disconnectedAt = now();
+            }
+            FileManager files = FileManager.getInstance();
+            long logout = disconnectedAt;
+            saveFuture = plugin.getPersistence().submit(() -> {
+                // No gameplay state was applied. Preserve the loaded file and account only for this connection.
+                if (loadingSnapshot == null) {
+                    YamlConfiguration config = files.read(playerId);
+                    ActivityTime activity = new ActivityTime(config);
+                    activity.join(joinedAt);
+                    activity.disconnect(logout);
+                    activity.write(config);
+                    config.set("Player Name", playerName);
+                    loadingSnapshot = config.saveToString();
+                }
+                files.save(playerId, loadingSnapshot);
+                return (Void) null;
+            }).whenComplete((ignored, failure) -> {
+                if (failure != null) {
+                    plugin.getLogger().log(Level.SEVERE, "Unable to save a disconnected loading session; retained for retry", failure);
+                }
+            });
+            return saveFuture;
+        }
+        if (!disconnected) {
+            disconnected = true;
+            stopGameplay();
+            getData().getActivityTime().disconnect(now());
+            pendingSnapshot = getData().snapshot(playerName);
+        }
+        return persist();
+    }
+
+    private CompletableFuture<Void> persist() {
+        saveFuture = writeSnapshot(pendingSnapshot);
+        return saveFuture;
+    }
+
+    private CompletableFuture<Void> writeSnapshot(String snapshot) {
+        FileManager files = FileManager.getInstance();
+        return plugin.getPersistence().submit(() -> {
+            files.save(playerId, snapshot);
+            return (Void) null;
+        }).whenComplete((ignored, failure) -> {
+            if (failure != null) {
+                plugin.getLogger().log(Level.SEVERE, "Unable to save FoodClicker player " + playerId + "; session retained for retry", failure);
+            }
         });
+    }
+
+    public void openGame() {
+        requireServerThread();
+        if (!im.isCurrent(this) || disconnected || loadingFailed || !player.isOnline()) {
+            return;
+        }
+        if (saveFuture != null) {
+            if (saveFuture.isDone() && !saveFuture.isCompletedExceptionally()) {
+                saveFuture = null;
+            } else {
+                CompletableFuture<Void> recovery = saveFuture.isDone() ? persist() : saveFuture;
+                recovery.whenComplete((ignored, failure) -> plugin.onServerThread(() -> {
+                    if (failure == null) {
+                        openGame();
+                    } else if (player.isOnline()) {
+                        player.sendMessage("FoodClicker: Saving failed. Your session is retained. Use /foodclicker to retry.");
+                    }
+                }));
+                return;
+            }
+        }
+        if (!gameOpen) {
+            resetClosedDetector();
+            getData().getActivityTime().open(now());
+            earnAfkIncomes();
+            gui = new GUI(this);
+            gameOpen = true;
+            repeatingClickerTask = createTask();
+        }
+        gui.setGameState(0);
+    }
+
+    public void closeGame() {
+        requireServerThread();
+        if (!gameOpen || disconnected) {
+            return;
+        }
+        stopGameplay();
+        getData().getActivityTime().close(now());
+        pendingSnapshot = getData().snapshot(playerName);
+        persist().whenComplete((ignored, failure) -> plugin.onServerThread(() -> {
+            if (failure != null && player.isOnline() && im.isCurrent(this)) {
+                player.sendMessage("FoodClicker: Saving failed. Your session is retained. Use /foodclicker to retry.");
+            }
+        }));
+    }
+
+    private void stopGameplay() {
+        gameOpen = false;
+        cancelPurchases();
+        if (repeatingClickerTask != null) {
+            repeatingClickerTask.cancel();
+            repeatingClickerTask = null;
+        }
+        possiblyTerminate();
+        getActiveEvents().clear();
+    }
+
+    private long now() {
+        return clock.getAsLong();
+    }
+
+    private static void requireServerThread() {
+        if (!Bukkit.isPrimaryThread()) {
+            throw new IllegalStateException("Player sessions must be accessed on the server thread");
+        }
     }
 
     public boolean noActiveEvents() {
@@ -204,8 +419,7 @@ public class ClickingPlayer {
         resetPaneItem(c);
         c.getBonus().doEffects(this);
 
-        if (c.getBonus().getBoostDuration(this) != -1) {
-            // perma upgrades don't need to be terminated
+        if (c.getBonus().getEffectType() == UpgradesBasedOnEvents.EffectType.TIMED) {
             getActiveBoosts().add(c);
             autoTerminateUpgrades(c);
         }
@@ -247,12 +461,18 @@ public class ClickingPlayer {
     }
 
     public void instantlyTerminateUpgrade(Clickable c) {
-        c.getBonus().undoEffects(this);
+        BukkitTask task = boostTasks.remove(c);
+        if (task != null) {
+            task.cancel();
+        }
+        if (getActiveBoosts().remove(c)) {
+            c.getBonus().undoEffects(this);
+        }
     }
 
     public void possiblyTerminate() {
         if (areBoostsActive()) {
-            for (Clickable c : getActiveBoosts()) {
+            for (Clickable c : new ArrayList<>(getActiveBoosts())) {
                 instantlyTerminateUpgrade(c);
                 if (getGui().getGameState() == 1 && c.getBonus().getBuildings() != null) {
                     updateBuildingInGUI(getGui().getGameWindow(), c.getBonus().getBuildings()); // refresh if in shop menu
@@ -264,13 +484,16 @@ public class ClickingPlayer {
     public void autoTerminateUpgrades(Clickable c) {
         ClickingPlayer cp = this;
 
-        Bukkit.getScheduler().runTaskLater(FoodClicker.getInstance(), () -> {
-            c.getBonus().undoEffects(cp);
-            getActiveBoosts().remove(c);
+        BukkitTask expiry = Bukkit.getScheduler().runTaskLater(plugin, () -> {
+            if (!im.isCurrent(cp) || !isGameOpen()) {
+                return;
+            }
+            instantlyTerminateUpgrade(c);
             if (cp.getGui().getGameState() == 1 && c.getBonus().getBuildings() != null) {
                 cp.updateBuildingInGUI(cp.getGui().getGameWindow(), c.getBonus().getBuildings()); // refresh if in shop menu
             }
         }, (c.getBonus().getBoostDuration(this) * 20L));
+        boostTasks.put(c, expiry);
         // turns into seconds bcs bukkit asks for ticks
     }
 
@@ -285,50 +508,50 @@ public class ClickingPlayer {
     }
 
     public void possiblyDoEvent() {
-        if (r.nextInt(100) < getData().getGeneralDoubleStats().get("eventChance")) {
+        if (shouldTriggerEvent(getData().getGeneralDoubleStats().get("eventChance"), r.nextDouble())) {
             doNewEvent();
         }
+    }
+
+    static boolean shouldTriggerEvent(double chancePercent, double randomUnitValue) {
+        return randomUnitValue * 100 < chancePercent;
     }
 
     public void doNewEvent() {
         Inventory window = this.getGui().getGameWindow();
         final List<UpgradesBasedOnEvents> eventBonuses = Collections.unmodifiableList(Arrays.asList(UpgradesBasedOnEvents.values()));
 
-        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-            UpgradesBasedOnEvents chosen = null;
-            while (chosen == null) {
-                int eventChooser = r.nextInt(eventBonuses.size());
-                UpgradesBasedOnEvents possiblyChosen = eventBonuses.get(eventChooser);
+        double eventLimit = 30 + EVENTCHANCELIMIT.getCurrentBonus(this);
+        if (getData().getGeneralDoubleStats().get("eventChance") > eventLimit) {
+            getData().getGeneralDoubleStats().put("eventChance", eventLimit);
+        }
 
-                if (possiblyChosen.getAffectingKey().equals("eventChance")) {
+        List<UpgradesBasedOnEvents> eligibleEvents = eventBonuses.stream()
+                .filter(event -> eventIsEligible(event, eventLimit))
+                .toList();
+        if (eligibleEvents.isEmpty()) {
+            return;
+        }
 
-                    double eventLimit = 30 + EVENTCHANCELIMIT.getCurrentBonus(this);
+        UpgradesBasedOnEvents chosen = eligibleEvents.get(r.nextInt(eligibleEvents.size()));
+        Clickable event = new Clickable(8 + r.nextInt(12) + (int) EVENTTIME.getCurrentBonus(this), window, chosen, this);
+        doSoundEffect(20);
+        setEventItem(event);
+        addActiveEvent(event);
+    }
 
-                    if (getData().getGeneralDoubleStats().get("eventChance") > eventLimit) {
-                        getData().getGeneralDoubleStats().put("eventChance", eventLimit);
-                    }
-                    if (getData().getGeneralDoubleStats().get("eventChance") == eventLimit) {
-                        continue;
-                    }
-                }
-
-                //nerf stock events if current bank is over 65% of current legacy earnings
-                if (possiblyChosen.getAffectingKey().equals("money") && possiblyChosen.getMultiplierIncrease() > 1D) {
-                    if ((0.65D + STONKS.getCurrentBonus(this) / 100) * cpd.getGeneralBigDecimals().get("legacy earnings").doubleValue() < cpd.getGeneralBigDecimals().get("money").doubleValue()) {
-                        continue;
-                    }
-                }
-
-                if (possiblyChosen.getBuildings() == null || (getData().getSpecificBuildingAmount(possiblyChosen.getBuildings()) > 0)) {
-                    chosen = possiblyChosen;
-                }
-            }
-            Clickable event = new Clickable(8 + r.nextInt(12) + (int) EVENTTIME.getCurrentBonus(this), window, chosen, this);
-            doSoundEffect(20);
-            setEventItem(event);
-            addActiveEvent(event);
-
-        });
+    private boolean eventIsEligible(UpgradesBasedOnEvents event, double eventLimit) {
+        if (event.getAffectingKey().equals("eventChance")
+                && getData().getGeneralDoubleStats().get("eventChance") >= eventLimit) {
+            return false;
+        }
+        if (event.getAffectingKey().equals("money") && event.getMultiplierIncrease() > 1D
+                && (0.65D + STONKS.getCurrentBonus(this) / 100)
+                * cpd.getGeneralBigDecimals().get("legacy earnings").doubleValue()
+                < cpd.getGeneralBigDecimals().get("money").doubleValue()) {
+            return false;
+        }
+        return event.getBuildings() == null || getData().getSpecificBuildingAmount(event.getBuildings()) > 0;
     }
 
     private void possiblyGetLeprechaun() {
@@ -346,7 +569,11 @@ public class ClickingPlayer {
                 InventoryView view = player.getOpenInventory();
                 Inventory gameWindow = view.getTopInventory();
 
-                if (im.inventoryIsFoodClicker(view.getTitle(), player)) {
+                if (!im.isCurrent(cp) || !player.isOnline()) {
+                    cp.closeGame();
+                    return;
+                }
+                if (im.inventoryIsFoodClicker(view, player)) {
                     if (cp.getClosedDetector() > 0) cp.resetClosedDetector();
                     cp.getData().addOneSecond();
                     cp.doIncomePerSecond();
@@ -362,18 +589,7 @@ public class ClickingPlayer {
                     if (cp.getClosedDetector() >= 3) {
                         System.out.println("FoodClicker: " + player.getName() + " closed FoodClicker. Task ending & saving file.");
 
-                        cp.getData().saveGameCloseDate(System.currentTimeMillis() / 1000);
-
-
-                        cp.possiblyTerminate();
-
-                        Bukkit.getScheduler().runTaskAsynchronously(FoodClicker.getInstance(), () -> {
-                            cp.getData().saveEverythingToFile();
-                            im.removePlayerFromMap(player);
-                        });
-
-                        System.out.println("FoodClicker: " + player.getName() + " 's file saved.");
-                        this.cancel();
+                        cp.closeGame();
                     }
                 }
             }
@@ -389,7 +605,7 @@ public class ClickingPlayer {
     }
 
     public void earn(double amount) {
-        getData().addMoney(new BigDecimal(amount));
+        getData().addMoney(BigDecimal.valueOf(amount));
     }
 
     public void earn(BigDecimal amount) {
@@ -397,7 +613,7 @@ public class ClickingPlayer {
     }
 
     public void pay(double amount) {
-        getData().removeMoney(new BigDecimal(amount));
+        getData().removeMoney(BigDecimal.valueOf(amount));
     }
 
     public void pay(BigDecimal amount) {
@@ -405,11 +621,15 @@ public class ClickingPlayer {
     }
 
     public boolean canAfford(double amount) {
-        return getData().getGeneralBigDecimals().get("money").min(BigDecimal.valueOf(amount)).equals(BigDecimal.valueOf(amount));
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), BigDecimal.valueOf(amount));
     }
 
     public boolean canAfford(BigDecimal amount) {
-        return getData().getGeneralBigDecimals().get("money").min(amount).equals(amount);
+        return hasAtLeast(getData().getGeneralBigDecimals().get("money"), amount);
+    }
+
+    static boolean hasAtLeast(BigDecimal balance, BigDecimal amount) {
+        return balance.compareTo(amount) >= 0;
     }
 
     public void updateBuymodeButton(Inventory inv) {
@@ -528,8 +748,8 @@ public class ClickingPlayer {
                 + CHAIN.calculateIncome(this)
                 + COMPANY.calculateIncome(this)
                 + HOUSEHOLDNAME.calculateIncome(this))
-                * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this))
-                * (1 + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this));
+                * (1 + MULTIPLIERPERUNLOCKEDACHIEVEMENT.getCurrentBonus(this) * getData().calculateTotalAchievementsUnlocked() / 100)
+                * (1 + PERMANENTINCOMEMULTIPLIER.getCurrentBonus(this) / 100);
     }
 
     public void flickBuyMode() {
@@ -550,18 +770,16 @@ public class ClickingPlayer {
 
     private double calculateAfkButOnline() {
         ClickingPlayerData cpd = getData();
-        long gameCloseTime = cpd.loadGameCloseTime();
+        long gameCloseTime = cpd.getActivityTime().takeClosedSeconds();
         long afkTime = Math.min((long) AFKBUTONLINEDURATION.getCurrentBonus(this), gameCloseTime);
-        cpd.resetGameCloseTime();
 
         return calculateTotalIncomePerSecond() * AFKBUTONLINE.getCurrentBonus(this) / 100 * afkTime;
     }
 
     private double calculateAfkAndOffline() {
         ClickingPlayerData cpd = getData();
-        long offlineTime = cpd.loadLoggedOutTime();
+        long offlineTime = cpd.getActivityTime().takeOfflineSeconds();
         long offlineDuration = Math.min((long) AFKANDOFFLINEDURATION.getCurrentBonus(this), offlineTime);
-        cpd.resetLoggedOutTime();
 
         return calculateTotalIncomePerSecond() * AFKANDOFFLINE.getCurrentBonus(this) / 100 * offlineDuration;
     }
@@ -683,17 +901,43 @@ public class ClickingPlayer {
     }
 
     public void doMaxPurchases(Buildings b) {
+        cancelPurchases();
         ClickingPlayer cp = this;
-        new RepeatingClickerTask(FoodClicker.getInstance(), 1L, 1L) {
+        purchaseTask = new RepeatingClickerTask(plugin, 1L, 1L) {
             @Override
             public void run() {
+                if (purchaseTask != this || !im.isCurrent(cp) || !player.isOnline() || !isGameOpen()
+                        || getGui().getGameState() != 1 || !im.ownsInventory(player.getOpenInventory().getTopInventory(), player)) {
+                    cancel();
+                    return;
+                }
                 if (canAfford(b.calculateCost(cp))) {
                     doSuccessfulPurchase(b);
                 } else {
-                    cancel();
+                    cancelPurchases();
                 }
             }
         };
+    }
+
+    public void cancelPurchases() {
+        if (purchaseTask != null) {
+            purchaseTask.cancel();
+            purchaseTask = null;
+        }
+    }
+
+    public void resetTransientEffects() {
+        cancelPurchases();
+        possiblyTerminate();
+        clearEvents();
+    }
+
+    public void clearEvents() {
+        for (Clickable event : getActiveEvents()) {
+            resetPaneItem(event);
+        }
+        getActiveEvents().clear();
     }
 
     public void doMessage(String message) {

@@ -9,7 +9,6 @@ import io.github.stealingdapenta.foodclicker.utils.ItemBuilder;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
-import lombok.Getter;
 import org.bukkit.Material;
 import org.bukkit.inventory.Inventory;
 import org.bukkit.inventory.ItemFlag;
@@ -33,23 +32,15 @@ public enum UpgradesBasedOnStats {
 
     CLICK_11("Mouse Breaker", APPLE, 10_000_000D, 2, "cookie", 500_000, "Click Multiplier", "• Clicking is 100% more effective.");
 
-    @Getter
     private final String name;
-    @Getter
     private final String requiredKey;
-    @Getter
     private final int requiredValue;
-    @Getter
     private final List<String> lore;
     private final double cost;
-    @Getter
     private final double multiplierIncrease;
-    @Getter
     private final String affectingKey;
-    @Getter
     private final String unlockedKey;
     private final InventoryManager im = InventoryManager.getInstance();
-    @Getter
     private final Material material;
 
     UpgradesBasedOnStats(String name, Material material, double cost, double multiplierIncrease, String requiredKey, int requiredValue, String affectingKey,
@@ -63,6 +54,38 @@ public enum UpgradesBasedOnStats {
         this.multiplierIncrease = multiplierIncrease;
         this.unlockedKey = (getRequiredKey() + getRequiredValue());
         this.affectingKey = affectingKey;
+    }
+
+    public String getName() {
+        return name;
+    }
+
+    public String getRequiredKey() {
+        return requiredKey;
+    }
+
+    public int getRequiredValue() {
+        return requiredValue;
+    }
+
+    public List<String> getLore() {
+        return lore;
+    }
+
+    public double getMultiplierIncrease() {
+        return multiplierIncrease;
+    }
+
+    public String getAffectingKey() {
+        return affectingKey;
+    }
+
+    public String getUnlockedKey() {
+        return unlockedKey;
+    }
+
+    public Material getMaterial() {
+        return material;
     }
 
     public double getCost(ClickingPlayer cp) {

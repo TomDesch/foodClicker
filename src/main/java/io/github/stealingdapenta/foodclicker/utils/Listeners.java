@@ -34,6 +34,8 @@ import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STARTW
 import static io.github.stealingdapenta.foodclicker.prestige.PrestigeEnum.STONKS;
 
 import io.github.stealingdapenta.foodclicker.basics.AchievementsEnum;
+import io.github.stealingdapenta.foodclicker.basics.GameInventory;
+import io.github.stealingdapenta.foodclicker.FoodClicker;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayer;
 import io.github.stealingdapenta.foodclicker.clickingplayers.ClickingPlayerSettings;
 import io.github.stealingdapenta.foodclicker.upgrades.UpgradesBasedOnBuildings;
@@ -42,11 +44,13 @@ import org.bukkit.Material;
 import org.bukkit.entity.Player;
 import org.bukkit.event.EventHandler;
 import org.bukkit.event.Listener;
+import org.bukkit.event.EventPriority;
 import org.bukkit.event.inventory.ClickType;
 import org.bukkit.event.inventory.InventoryClickEvent;
+import org.bukkit.event.inventory.InventoryCloseEvent;
+import org.bukkit.event.inventory.InventoryDragEvent;
 import org.bukkit.event.inventory.InventoryType;
 import org.bukkit.event.player.PlayerJoinEvent;
-import org.bukkit.event.player.PlayerKickEvent;
 import org.bukkit.event.player.PlayerQuitEvent;
 import org.bukkit.inventory.InventoryView;
 
@@ -60,11 +64,6 @@ public class Listeners implements Listener {
     public static final String PRESTIGE_SHOP = "'s Prestige Shop";
 
     private final InventoryManager im = InventoryManager.getInstance();
-    private final FileManager fm = FileManager.getInstance();
-
-    private static String possibleTitle(Player p, String addendum) {
-        return p.getDisplayName() + addendum;
-    }
 
     private void possiblyUnlockClickTypeAchievements(ClickType ct, ClickingPlayer cp) {
         if (ct.equals(ClickType.RIGHT)) {
@@ -83,89 +82,63 @@ public class Listeners implements Listener {
     }
 
 
-    public long loadGameCloseDate(Player p) {
-        return fm.getLongByKey(p, "gameCloseDate");
-    }
-
-    public void saveGameCloseDate(Player p, long time) {
-        fm.setLongByKey(p, "gameCloseDate", time);
-    }
-
-    public long loadGameCloseTime(Player p) {
-        return fm.getLongByKey(p, "gameCloseTime");
-    }
-
-    public void saveGameCloseTime(Player p, long duration) {
-        fm.setLongByKey(p, "gameCloseTime", duration);
-    }
-
-
-    public long loadLogOutDate(Player p) {
-        return fm.getLongByKey(p, "loggedOutDate");
-    }
-
-    public void saveLogOutDate(Player p, long time) {
-        fm.setLongByKey(p, "loggedOutDate", time);
-    }
-
-    public long loadLoggedOutTime(Player p) {
-        return fm.getLongByKey(p, "loggedOutTime");
-    }
-
-    public void saveLoggedOutTime(Player p, long duration) {
-        fm.setLongByKey(p, "loggedOutTime", duration);
-    }
-
-    @EventHandler
+    @EventHandler(priority = EventPriority.MONITOR)
     public void onPlayerQuit(PlayerQuitEvent e) {
-        Player p = e.getPlayer();
-        saveLogOutDate(p, System.currentTimeMillis() / 1000);
-
-        long time = loadGameCloseDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadGameCloseDate(p);
-
-        saveGameCloseTime(p, loadGameCloseTime(p) + time);
-    }
-
-    @EventHandler
-    public void onPlayerKick(PlayerKickEvent e) {
-        Player p = e.getPlayer();
-        saveLogOutDate(p, System.currentTimeMillis() / 1000);
-
-        long time = loadGameCloseDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadGameCloseDate(p);
-
-        saveGameCloseTime(p, loadGameCloseTime(p) + time);
+        // Quit is the actual disconnect, including successful kicks. Cancelled kicks do nothing.
+        closePlayerSession(e.getPlayer());
     }
 
     @EventHandler
     public void onPlayerJoin(PlayerJoinEvent e) {
-        Player p = e.getPlayer();
-        saveGameCloseDate(p, System.currentTimeMillis() / 1000);
+        im.connect(e.getPlayer());
+    }
 
-        long time = loadLogOutDate(p) == 0 ? 0 : System.currentTimeMillis() / 1000 - loadLogOutDate(p);
+    private void closePlayerSession(Player player) {
+        ClickingPlayer clickingPlayer = im.getClickingPlayerMap().get(player.getUniqueId());
+        if (clickingPlayer != null && clickingPlayer.getPlayer() == player) {
+            FoodClicker plugin = FoodClicker.getInstance();
+            clickingPlayer.shutdownAndSave().whenComplete((ignored, failure) ->
+                    plugin.onServerThread(() -> {
+                        if (failure == null) {
+                            im.remove(clickingPlayer);
+                        }
+                    }));
+        }
+    }
 
-        saveLoggedOutTime(p, loadLoggedOutTime(p) + time);
+    @EventHandler
+    public void onInventoryClose(InventoryCloseEvent event) {
+        if (event.getPlayer() instanceof Player player && im.ownsInventory(event.getInventory(), player)) {
+            GameInventory holder = (GameInventory) event.getInventory().getHolder();
+            holder.getSession().closeGame();
+        }
+    }
+
+    @EventHandler
+    public void onInventoryDrag(InventoryDragEvent event) {
+        if (event.getView().getTopInventory().getHolder() instanceof GameInventory) {
+            event.setCancelled(true);
+        }
     }
 
     @EventHandler
     public void onInventoryClick(InventoryClickEvent e) {
         InventoryView inv = e.getView();
-        Player p = (Player) e.getWhoClicked();
+        if (!(e.getWhoClicked() instanceof Player p)) {
+            return;
+        }
         int slot = e.getRawSlot();
         ClickType ct = e.getClick();
 
-        if (!im.inventoryIsFoodClicker(inv.getTitle(), p)) {
+        if (!(inv.getTopInventory().getHolder() instanceof GameInventory)) {
             return;
         }
         e.setCancelled(true);
 
-        ClickingPlayer cp = im.getClickingPlayerMap()
-                              .get(p);
-        if (cp == null) {
-            im.closeGUI(p);
-            cp = new ClickingPlayer(p);
-            im.addClickingPlayerToMap(cp);
+        if (!im.inventoryIsFoodClicker(inv, p)) {
             return;
         }
+        ClickingPlayer cp = im.getClickingPlayerMap().get(p.getUniqueId());
 
         possiblyUnlockClickTypeAchievements(ct, cp);
         if (e.getSlotType()
@@ -196,23 +169,17 @@ public class Listeners implements Listener {
             }
         }
 
-        if (inv.getTitle()
-               .equals(possibleTitle(p, GAME_GUI_TITLE_ADDENDUM))) {
+        if (cp.getGui().getGameState() == 0) {
             doMainGameInteractions(slot, cp);
-        } else if (inv.getTitle()
-                      .equals(possibleTitle(p, SHOP_GUI_TITLE_ADDENDUM))) {
+        } else if (cp.getGui().getGameState() == 1) {
             doStoreInteractions(slot, cp, inv);
-        } else if (inv.getTitle()
-                      .equals(possibleTitle(p, ACHIEVEMENTS_GUI_TITLE_ADDENDUM))) {
+        } else if (cp.getGui().getGameState() == 2) {
             doAchievementInteractions(slot, cp);
-        } else if (inv.getTitle()
-                      .equals(possibleTitle(p, UPGRADES_GUI_TITLE_ADDENDUM))) {
+        } else if (cp.getGui().getGameState() == 3) {
             doUpgradesInteractions(slot, cp, inv);
-        } else if (inv.getTitle()
-                      .equals(possibleTitle(p, PREFERENCES_GUI_TITLE_ADDENDUM))) {
+        } else if (cp.getGui().getGameState() == 4) {
             doPreferencesInteractions(slot, cp);
-        } else if (inv.getTitle()
-                      .equals(possibleTitle(p, PRESTIGE_SHOP))) {
+        } else if (cp.getGui().getGameState() == 5) {
             doPrestigeShopInteractions(slot, cp);
         }
     }
