@@ -25,6 +25,26 @@ import org.bukkit.inventory.meta.SkullMeta;
 public class InventoryManager {
 
     private static InventoryManager inventoryManager;
+    private static final BigDecimal MILLION = BigDecimal.valueOf(1000000D);
+    private static final BigDecimal BILLION = BigDecimal.valueOf(1000000000D);
+    private static final BigDecimal TRILLION = BigDecimal.valueOf(1000000000000D);
+    private static final BigDecimal QUADRILLION = BigDecimal.valueOf(1000000000000000D);
+    private static final BigDecimal QUINTILLION = BigDecimal.valueOf(1000000000000000000D);
+    private static final BigDecimal HEXTILLION = BigDecimal.valueOf(1000000000000000000000D);
+    private static final BigDecimal SEPTILLION = BigDecimal.valueOf(1000000000000000000000000D);
+    private static final BigDecimal OCTILLION = BigDecimal.valueOf(1000000000000000000000000000D);
+    private static final BigDecimal NONILLION = BigDecimal.valueOf(1000000000000000000000000000000D);
+    private static final BigDecimal DECILLION = BigDecimal.valueOf(1000000000000000000000000000000000D);
+    private static final BigDecimal UNDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000D);
+    private static final BigDecimal DUODECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000D);
+    private static final BigDecimal TREDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000D);
+    private static final BigDecimal QUATTUORDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000D);
+    private static final BigDecimal QUINDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal HEXDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal SEPTENDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal OCTODECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal NOVEMDECILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000D);
+    private static final BigDecimal VIGINTILLION = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000D);
     private final Map<UUID, ClickingPlayer> clickingPlayerMap = new HashMap<>();
 
     private InventoryManager() {
@@ -211,67 +231,46 @@ public class InventoryManager {
     }
 
     public String truncateNumber(BigDecimal number) {
-        BigDecimal million = BigDecimal.valueOf(1000000D);
-        BigDecimal billion = BigDecimal.valueOf(1000000000D);
-        BigDecimal trillion = BigDecimal.valueOf(1000000000000D);
-        BigDecimal quadrillion = BigDecimal.valueOf(1000000000000000D);
-        BigDecimal quintillion = BigDecimal.valueOf(1000000000000000000D);
-        BigDecimal hextillion = BigDecimal.valueOf(1000000000000000000000D);
-        BigDecimal septillion = BigDecimal.valueOf(1000000000000000000000000D);
-        BigDecimal octillion = BigDecimal.valueOf(1000000000000000000000000000D);
-        BigDecimal nonillion = BigDecimal.valueOf(1000000000000000000000000000000D);
-        BigDecimal decillion = BigDecimal.valueOf(1000000000000000000000000000000000D);
-        BigDecimal undecillion = BigDecimal.valueOf(1000000000000000000000000000000000000D);
-        BigDecimal duodecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000D);
-        BigDecimal tredecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000D);
-        BigDecimal quattuordecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000D);
-        BigDecimal quindecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000D);
-        BigDecimal hexdecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000D);
-        BigDecimal septendecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000D);
-        BigDecimal octodecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000D);
-        BigDecimal novemdecillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000D);
-        BigDecimal vigintillion = BigDecimal.valueOf(1000000000000000000000000000000000000000000000000000000000000000D);
-
-        if (isBetween(number, million, billion)) {
-            return (makeNumbersPretty(calculateFraction(number, million)) + " Million");
-        } else if (isBetween(number, billion, trillion)) {
-            return (makeNumbersPretty(calculateFraction(number, billion)) + " Billion");
-        } else if (isBetween(number, trillion, quadrillion)) {
-            return (makeNumbersPretty(calculateFraction(number, trillion)) + " Trillion");
-        } else if (isBetween(number, quadrillion, quintillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quadrillion)) + " Quadrillion");
-        } else if (isBetween(number, quintillion, hextillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quintillion)) + " Quintillion");
-        } else if (isBetween(number, hextillion, septillion)) {
-            return (makeNumbersPretty(calculateFraction(number, hextillion)) + " Hextillion");
-        } else if (isBetween(number, septillion, octillion)) {
-            return (makeNumbersPretty(calculateFraction(number, septillion)) + " Septillion");
-        } else if (isBetween(number, octillion, nonillion)) {
-            return (makeNumbersPretty(calculateFraction(number, octillion)) + " Octillion");
-        } else if (isBetween(number, nonillion, decillion)) {
-            return (makeNumbersPretty(calculateFraction(number, nonillion)) + " Nonillion");
-        } else if (isBetween(number, decillion, undecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, decillion)) + " Decillion");
-        } else if (isBetween(number, undecillion, duodecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, undecillion)) + " Undecillion");
-        } else if (isBetween(number, duodecillion, tredecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, duodecillion)) + " Duodecillion");
-        } else if (isBetween(number, tredecillion, quattuordecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, tredecillion)) + " Tredecillion");
-        } else if (isBetween(number, quattuordecillion, quindecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quattuordecillion)) + " Quattuordecillion");
-        } else if (isBetween(number, quindecillion, hexdecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, quindecillion)) + " Quindecillion");
-        } else if (isBetween(number, hexdecillion, septendecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, hexdecillion)) + " Hexdecillion");
-        } else if (isBetween(number, septendecillion, octodecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, septendecillion)) + " Septendecillion");
-        } else if (isBetween(number, octodecillion, novemdecillion)) {
-            return (makeNumbersPretty(calculateFraction(number, octodecillion)) + " Octodecillion");
-        } else if (isBetween(number, novemdecillion, vigintillion)) {
-            return (makeNumbersPretty(calculateFraction(number, novemdecillion)) + " Novemdecillion");
-        } else if (number.compareTo(vigintillion) >= 0) {
-            return (makeNumbersPretty(calculateFraction(number, vigintillion)) + " Vigintillion");
+        if (isBetween(number, MILLION, BILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, MILLION)) + " Million");
+        } else if (isBetween(number, BILLION, TRILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, BILLION)) + " Billion");
+        } else if (isBetween(number, TRILLION, QUADRILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, TRILLION)) + " Trillion");
+        } else if (isBetween(number, QUADRILLION, QUINTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUADRILLION)) + " Quadrillion");
+        } else if (isBetween(number, QUINTILLION, HEXTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUINTILLION)) + " Quintillion");
+        } else if (isBetween(number, HEXTILLION, SEPTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, HEXTILLION)) + " Hextillion");
+        } else if (isBetween(number, SEPTILLION, OCTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, SEPTILLION)) + " Septillion");
+        } else if (isBetween(number, OCTILLION, NONILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, OCTILLION)) + " Octillion");
+        } else if (isBetween(number, NONILLION, DECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, NONILLION)) + " Nonillion");
+        } else if (isBetween(number, DECILLION, UNDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, DECILLION)) + " Decillion");
+        } else if (isBetween(number, UNDECILLION, DUODECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, UNDECILLION)) + " Undecillion");
+        } else if (isBetween(number, DUODECILLION, TREDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, DUODECILLION)) + " Duodecillion");
+        } else if (isBetween(number, TREDECILLION, QUATTUORDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, TREDECILLION)) + " Tredecillion");
+        } else if (isBetween(number, QUATTUORDECILLION, QUINDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUATTUORDECILLION)) + " Quattuordecillion");
+        } else if (isBetween(number, QUINDECILLION, HEXDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, QUINDECILLION)) + " Quindecillion");
+        } else if (isBetween(number, HEXDECILLION, SEPTENDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, HEXDECILLION)) + " Hexdecillion");
+        } else if (isBetween(number, SEPTENDECILLION, OCTODECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, SEPTENDECILLION)) + " Septendecillion");
+        } else if (isBetween(number, OCTODECILLION, NOVEMDECILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, OCTODECILLION)) + " Octodecillion");
+        } else if (isBetween(number, NOVEMDECILLION, VIGINTILLION)) {
+            return (makeNumbersPretty(calculateFraction(number, NOVEMDECILLION)) + " Novemdecillion");
+        } else if (number.compareTo(VIGINTILLION) >= 0) {
+            return (makeNumbersPretty(calculateFraction(number, VIGINTILLION)) + " Vigintillion");
         }
 
         return makeNumbersPretty(number);
