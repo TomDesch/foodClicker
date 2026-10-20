@@ -1,10 +1,12 @@
 # FoodClicker
 
-Inventory-based idle game for Spigot and Paper 26.3. No Paper-only APIs or NMS are used.
+Inventory-based idle game for Spigot and Paper 26.2 and 26.3. No Paper-only APIs or NMS are used.
 
 ## Build and install
 
 Build with JDK 26 and Maven: `mvn clean verify`. The plugin emits Java 21 bytecode; this does not lower the server's own Java requirement. Run current servers with Java 25 or 26.
+
+The build compiles against a pinned Spigot 26.2 API, matching the minimum `api-version`. Use the same plugin jar on both supported server versions.
 
 Copy `target\FoodClicker-4.0.0.jar` into the server's `plugins` directory and restart. No runtime libraries or companion plugins are required. Do not use server reload.
 
