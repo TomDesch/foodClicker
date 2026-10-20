@@ -1,9 +1,9 @@
 name: FoodClicker
-version: 4.0.0
+version: 4.0.1
 main: io.github.stealingdapenta.foodclicker.FoodClicker
 author: StealingDaPenta
 description: IDLE inventory game.
-api-version: '26.3'
+api-version: '26.2'
 
 commands:
   foodclicker:
